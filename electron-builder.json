@@ -1,0 +1,17 @@
+{
+  "appId": "com.example.myapp",
+  "productName": "MyApp",
+  "directories": {
+    "output": "dist/build"
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "win": {
+    "target": "nsis"
+  },
+  "mac": {
+    "target": "dmg"
+  }
+}
+
