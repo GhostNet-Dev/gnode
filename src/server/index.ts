@@ -2,7 +2,7 @@ import { createServer } from 'http';
 import { readFile } from 'fs';
 import { join } from 'path';
 
-const PORT = 3000;
+export const PORT = 3000;
 
 // 정적 파일 서비스 (index.html)
 const server = createServer((req, res) => {

@@ -1,4 +1,5 @@
 import { IChannel } from "@Commons/icom";
+import { PORT } from ".";
 
 export type Handler = { [key: string]: Function }
 export type S2CMsg = { types: string, params: any }
@@ -10,7 +11,7 @@ export default class Socket implements IChannel {
     m_handler: Handler;
     
     public constructor() {
-        this.m_ws = new WebSocket(`ws://${window.location.hostname}:8021`);
+        this.m_ws = new WebSocket(`ws://${window.location.hostname}:${PORT}`);
         this.m_opend = false;
         this.m_handler = {};
 

@@ -20,7 +20,13 @@ module.exports = {
         ]
     },
     resolve: {
-        extensions: ['.ts', '.js']
+        extensions: ['.ts', '.js'],
+        alias: {
+            "@Commons": path.resolve(__dirname, "src/common"),
+            "@Models": path.resolve(__dirname, "src/models"),
+            "@Glibs": path.resolve(__dirname, "src/gsdk/src"),
+            "@GBlibs": path.resolve(__dirname, "src/libs/src"),
+        }
     }
 };
 

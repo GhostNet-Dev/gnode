@@ -10,6 +10,7 @@
       "@Commons/*": [ "src/common/*" ],
       "@Models/*": [ "src/models/*" ],
       "@Glibs/*": [ "src/gsdk/src/*" ],
+      "@GBlibs/*": [ "src/libs/src/*" ],
     },
   },
   "include": [
