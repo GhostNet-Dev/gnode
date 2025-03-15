@@ -140,7 +140,13 @@ export default class DHTPeer {
         }
     }
     private handleIncomingData(data: GPacket, conn: DataConnection) {
-        this.handler[data.type](data, conn)
+        const h = this.handler[data.type](data, conn)
+        if(h) h(data, conn)
+        else {
+            this.clients[data.type]?.forEach((c) => {
+                c(data, conn)
+            })
+        }
     }
     private initHandler() {
         this.handler[GPType.DHTLookupSq] = (data: GPacket, conn: DataConnection) => {

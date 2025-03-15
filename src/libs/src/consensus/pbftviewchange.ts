@@ -1,4 +1,4 @@
-import { pbftNetwork } from "./pbftconsensus";
+import { NetworkInterface } from "@GBlibs/network/inetwork";
 
 export default class PBFTViewChange {
   nodes: string[];
@@ -7,7 +7,13 @@ export default class PBFTViewChange {
   timeoutThreshold: number;
   timeoutCount: { [key: string]: number };
 
-  constructor(nodes: string[], currentPrimary: string, currentView: number = 0, timeoutThreshold: number = 3) {
+  constructor(
+    private pbftNetwork: NetworkInterface,
+    nodes: string[],
+    currentPrimary: string,
+    currentView: number = 0,
+    timeoutThreshold: number = 3
+  ) {
     this.nodes = nodes;
     this.primaryNode = currentPrimary;
     this.viewNumber = currentView;
@@ -24,12 +30,12 @@ export default class PBFTViewChange {
   // ✅ View Change 요청을 보냄
   async requestViewChange(): Promise<string | null> {
     console.log("⚠️ [View Change] View Change 요청 중...");
-    
+
     return new Promise((resolve) => {
       let viewChangeCount = 0;
-      pbftNetwork.sendMessage("VIEW-CHANGE", { viewNumber: this.viewNumber });
+      this.pbftNetwork.sendMessage("VIEW-CHANGE", { viewNumber: this.viewNumber });
 
-      pbftNetwork.on("VIEW-CHANGE-ACK", () => {
+      this.pbftNetwork.on("VIEW-CHANGE-ACK", () => {
         viewChangeCount++;
         console.log(`✅ [View Change] 노드 동의 수: ${viewChangeCount}`);
 

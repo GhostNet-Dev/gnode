@@ -36,17 +36,22 @@ export default class TransactionManager {
     }
   }
 
-  // ✅ 트랜잭션 해시 생성
-  generateTransactionHash(transaction: Omit<Transaction, "txid">): string {
+  // ✅ 트랜잭션 해시 생성 (중계자 포함)
+  generateTransactionHash(transaction: Omit<Transaction, "signature">): string {
     const hash = createHash("sha256");
-    hash.update(JSON.stringify(transaction.inputs) + JSON.stringify(transaction.outputs));
+    hash.update(
+      JSON.stringify(transaction.inputs) +
+      JSON.stringify(transaction.outputs) +
+      transaction.senderPublicKey +
+      (transaction.mediator || "")
+    );
     return hash.digest("hex");
   }
 
-  // ✅ 트랜잭션 서명
-  signTransaction(transaction: Transaction, privateKey: string): string {
+  // ✅ 트랜잭션 서명 (전체 데이터 기반)
+  signTransaction(transactionData: Omit<Transaction, "signature">, privateKey: string): string {
     const sign = createSign("SHA256");
-    sign.update(transaction.txid);
+    sign.update(JSON.stringify(transactionData)); // 트랜잭션 전체 데이터를 서명에 포함
     sign.end();
     return sign.sign(privateKey, "hex");
   }
@@ -54,18 +59,26 @@ export default class TransactionManager {
   // ✅ 트랜잭션 검증 (서명 확인)
   verifyTransaction(transaction: Transaction): boolean {
     const verify = createVerify("SHA256");
-    verify.update(transaction.txid);
+    const transactionData: Omit<Transaction, "signature"> = {
+      txid: transaction.txid,
+      inputs: transaction.inputs,
+      outputs: transaction.outputs,
+      senderPublicKey: transaction.senderPublicKey,
+      mediator: transaction.mediator,
+    };
+    verify.update(JSON.stringify(transactionData));
     verify.end();
     return verify.verify(transaction.senderPublicKey, transaction.signature, "hex");
   }
 
-  // ✅ 트랜잭션 생성 (Hash + 서명 포함)
+  // ✅ 트랜잭션 생성 (송신자, 수신자, 중계자 포함)
   async createTransaction(
     senderPrivateKey: string,
     senderPublicKey: string,
     sender: string,
     recipient: string,
-    amount: number
+    amount: number,
+    mediator: string
   ): Promise<Transaction> {
     let totalInput = 0;
     const inputs: UTXO[] = [];
@@ -86,28 +99,31 @@ export default class TransactionManager {
       await this.removeUTXO(utxo.txid, utxo.index);
     }
 
-    // ✅ 새로운 UTXO 생성
+    // ✅ 새로운 UTXO 생성 (중계자가 존재하면 중계자도 추가)
     const newUTXOs: UTXO[] = [{ txid: "new_tx", index: 0, amount, owner: recipient }];
     if (totalInput > amount) {
       newUTXOs.push({ txid: "new_tx", index: 1, amount: totalInput - amount, owner: sender });
     }
+    if (mediator) {
+      newUTXOs.push({ txid: "new_tx", index: 2, amount: 1, owner: mediator }); // 중계자에게 1코인 지급
+    }
 
     // ✅ 트랜잭션 객체 생성 (txid 제외)
-    const transactionData: Omit<Transaction, "txid"> = {
+    const transactionData: Omit<Transaction, "signature"> = {
+      txid: "",
       inputs,
       outputs: newUTXOs,
-      signature: "",
       senderPublicKey,
+      mediator,
     };
 
     // ✅ 트랜잭션 해시 생성
-    const txid = this.generateTransactionHash(transactionData);
+    transactionData.txid = this.generateTransactionHash(transactionData);
 
-    // ✅ 서명 추가
+    // ✅ 서명 추가 (트랜잭션 전체 데이터 기반)
     const signedTransaction: Transaction = {
       ...transactionData,
-      txid,
-      signature: this.signTransaction({ ...transactionData, txid }, senderPrivateKey),
+      signature: this.signTransaction(transactionData, senderPrivateKey),
     };
 
     // ✅ 트랜잭션 저장

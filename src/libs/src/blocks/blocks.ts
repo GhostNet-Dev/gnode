@@ -1,28 +1,21 @@
-import { Transaction } from "@GBlibs/txs/txtypes";
+import { Transaction, UTXO } from "@GBlibs/txs/txtypes";
 import { Block } from "./blocktypes";
 import { Level } from "level";
 import crypto from "crypto";
 import TransactionManager from "@GBlibs/txs/txs";
+import ValidatorManager from "@GBlibs/consensus/validators";
 
 // 블록 저장용 DB
 const blockDB = new Level<string, Block>("./block-db", { valueEncoding: "json" });
-// Validator 목록 저장용 DB (블록체인 내부 정보)
-const validatorDB = new Level<string, string[]>("./validator-db", { valueEncoding: "json" });
-
-
-// -----------------------------------------------------------------------------
-// BlockManager: 블록 생성, 검증, 합의, 저장 및 Validator 관리
-// -----------------------------------------------------------------------------
 
 export default class BlockManager {
-  // 체인 상태를 메모리에서 유지 (최초 제네시스 블록 생성)
   private blockchain: Block[] = [];
 
-  constructor() {
+  constructor(private validatorMgr: ValidatorManager) {
     this.blockchain.push(this.createGenesisBlock());
   }
 
-  // 제네시스 블록 생성
+  // ✅ 제네시스 블록 생성
   private createGenesisBlock(): Block {
     return {
       index: 0,
@@ -30,20 +23,31 @@ export default class BlockManager {
       timestamp: Date.now(),
       transactions: [],
       validator: "genesis",
-      validators: [], // 제네시스 블록에는 별도 Validator 정보가 없을 수 있음
+      validators: [],
       hash: "genesis_hash",
     };
   }
 
-  // 체인 내 마지막 블록 반환
+  // ✅ 체인 내 마지막 블록 반환
   getLatestBlock(): Block {
     return this.blockchain[this.blockchain.length - 1];
   }
 
-  // 블록 생성 (Validator 목록은 별도 DB 또는 정적 목록 사용)
-  async createBlock(transactions: Transaction[], validator: string): Promise<Block> {
+  // ✅ 블록 생성 (Coinbase 보상 추가)
+  async createBlock(transactions: Transaction[], validator: string, txManager: TransactionManager): Promise<Block> {
     const previousBlock = this.getLatestBlock();
-    const validators = await this.getValidators();
+    const validators = await this.validatorMgr.getValidators();
+
+    // 🔄 중계자(Mediator) 목록 추출 및 보상 분배
+    const mediatorRewards = this.calculateMediatorRewards(transactions);
+
+    // ✅ Coinbase 트랜잭션 생성
+    const coinbaseTransaction = this.createCoinbaseTransaction(mediatorRewards);
+
+    // 블록 내 트랜잭션 리스트 업데이트
+    transactions.unshift(coinbaseTransaction);
+
+    // ✅ 새로운 블록 생성
     const newBlock: Block = {
       index: previousBlock.index + 1,
       previousHash: previousBlock.hash,
@@ -53,16 +57,61 @@ export default class BlockManager {
       validators,
       hash: "",
     };
+
     newBlock.hash = this.calculateHash(newBlock);
     return newBlock;
   }
 
-  // 블록 해시 계산
+  // ✅ 블록 해시 계산
   calculateHash(block: Block): string {
     return crypto.createHash("sha256").update(JSON.stringify(block)).digest("hex");
   }
 
-  // PBFT 기반 합의: validators의 2/3 이상 승인 시 합의 완료
+  // ✅ 중계자의 거래 기여도에 따른 1000 코인 분배
+  private calculateMediatorRewards(transactions: Transaction[]): { mediator: string; amount: number }[] {
+    const mediatorCount: Record<string, number> = {};
+
+    for (const tx of transactions) {
+      if (tx.mediator) {
+        mediatorCount[tx.mediator] = (mediatorCount[tx.mediator] || 0) + 1;
+      }
+    }
+
+    const totalMediatedTransactions = Object.values(mediatorCount).reduce((sum, count) => sum + count, 0);
+    if (totalMediatedTransactions === 0) return [];
+
+    return Object.entries(mediatorCount).map(([mediator, count]) => ({
+      mediator,
+      amount: Math.floor((count / totalMediatedTransactions) * 1000),
+    }));
+  }
+
+  // ✅ Coinbase 트랜잭션 생성
+  private createCoinbaseTransaction(mediatorRewards: { mediator: string; amount: number }[]): Transaction {
+    // Coinbase 트랜잭션 데이터
+    const transactionData: Omit<Transaction, "signature" | "txid"> = {
+      inputs: [],
+      outputs: mediatorRewards.map(({ mediator, amount }, index) => ({
+        txid: "coinbase",
+        index,
+        amount,
+        owner: mediator,
+      })),
+      senderPublicKey: "coinbase",
+      mediator: "network_reward",
+    };
+
+    // ✅ Coinbase 트랜잭션 해시 생성 (블록 데이터 기반)
+    const txid = crypto.createHash("sha256").update(JSON.stringify(transactionData)).digest("hex");
+
+    return {
+      ...transactionData,
+      txid,
+      signature: "coinbase_signature",
+    };
+  }
+
+  // ✅ PBFT 기반 합의
   pbftConsensus(block: Block, validators: string[]): boolean {
     let approvals = 0;
     for (const _ of validators) {
@@ -78,20 +127,24 @@ export default class BlockManager {
     }
   }
 
-  // 블록 검증: 이전 블록과의 연결, 해시값, 그리고 트랜잭션 유효성 (UTXO 존재 여부)
+  // ✅ 블록 검증 (UTXO 검증 및 Coinbase 검증 포함)
   async isValidBlock(newBlock: Block, previousBlock: Block, txManager: TransactionManager): Promise<boolean> {
-    // 1. 이전 블록 해시 비교
     if (newBlock.previousHash !== previousBlock.hash) {
       console.error("❌ 오류: 이전 해시 불일치");
       return false;
     }
-    // 2. 해시 재계산 검증
     if (newBlock.hash !== this.calculateHash(newBlock)) {
       console.error("❌ 오류: 블록 해시 불일치");
       return false;
     }
-    // 3. 각 트랜잭션의 입력 UTXO 존재 여부 검증
-    for (const tx of newBlock.transactions) {
+
+    const coinbaseTx = newBlock.transactions[0];
+    if (!this.isValidCoinbase(coinbaseTx, newBlock.transactions.slice(1))) {
+      console.error("❌ 오류: Coinbase 배분 검증 실패");
+      return false;
+    }
+
+    for (const tx of newBlock.transactions.slice(1)) {
       for (const input of tx.inputs) {
         const utxo = await txManager.getUTXO(input.txid, input.index);
         if (!utxo) {
@@ -103,13 +156,33 @@ export default class BlockManager {
     return true;
   }
 
-  // 블록 저장 (LevelDB 사용)
+  // ✅ Coinbase 검증 (1000 코인이 적절히 분배되었는지 확인)
+  private isValidCoinbase(coinbaseTx: Transaction, transactions: Transaction[]): boolean {
+    const expectedRewards = this.calculateMediatorRewards(transactions);
+    const totalReward = coinbaseTx.outputs.reduce((sum, output) => sum + output.amount, 0);
+
+    if (totalReward !== 1000) {
+      console.error(`❌ 오류: Coinbase 총 보상액 불일치 (기대값: 1000, 실제: ${totalReward})`);
+      return false;
+    }
+
+    for (const output of coinbaseTx.outputs) {
+      const expectedReward = expectedRewards.find(r => r.mediator === output.owner);
+      if (!expectedReward || expectedReward.amount !== output.amount) {
+        console.error(`❌ 오류: Coinbase 분배 불일치 (${output.owner}: ${output.amount})`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // ✅ 블록 저장
   async saveBlock(block: Block): Promise<void> {
     await blockDB.put(block.index.toString(), block);
     console.log(`✅ 블록 저장 완료: ${block.index}`);
   }
 
-  // 블록 조회
+  // ✅ 블록 조회
   async getBlock(index: number): Promise<Block | null> {
     try {
       return await blockDB.get(index.toString());
@@ -117,44 +190,15 @@ export default class BlockManager {
       return null;
     }
   }
-
-  // ---------------------------------------------------------------------------
-  // Validator 관리: Validator 목록을 DB에 저장하고 조회
-  // ---------------------------------------------------------------------------
-  async saveValidators(validators: string[]): Promise<void> {
-    await validatorDB.put("validators", validators);
-    console.log("✅ Validator 목록 저장:", validators);
-  }
-
-  async getValidators(): Promise<string[]> {
-    try {
-      return await validatorDB.get("validators");
-    } catch (error) {
-      // 초기 Validator 목록 (정적 기본값)
-      const defaultValidators = ["Node1", "Node2", "Node3", "Node4"];
-      await this.saveValidators(defaultValidators);
-      return defaultValidators;
+  /**
+ * ✅ 전체 블록체인 데이터 반환
+ */
+  async getBlockchain(): Promise<Block[]> {
+    const blocks: Block[] = [];
+    for await (const [, block] of blockDB.iterator()) {
+      blocks.push(block);
     }
-  }
-
-  async addValidator(newValidator: string): Promise<void> {
-    const validators = await this.getValidators();
-    if (!validators.includes(newValidator)) {
-      validators.push(newValidator);
-      await this.saveValidators(validators);
-      console.log(`✅ Validator 추가: ${newValidator}`);
-    }
-  }
-
-  async removeValidator(validator: string): Promise<void> {
-    let validators = await this.getValidators();
-    validators = validators.filter(v => v !== validator);
-    await this.saveValidators(validators);
-    console.log(`❌ Validator 삭제: ${validator}`);
-  }
-
-  // 체인 전체 상태 반환 (메모리상의 체인)
-  getBlockchain(): Block[] {
-    return this.blockchain;
+    return blocks.sort((a, b) => a.index - b.index); // 블록 번호 순으로 정렬
   }
 }
+

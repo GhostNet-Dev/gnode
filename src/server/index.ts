@@ -1,8 +1,12 @@
 import { createServer } from 'http';
+import path from "path"
+import fs from 'fs'
 import { readFile } from 'fs';
 import { join } from 'path';
+import { Mime } from "mime"
 
 export const PORT = 3000;
+const mime = new Mime()
 
 // 정적 파일 서비스 (index.html)
 const server = createServer((req, res) => {
@@ -28,8 +32,18 @@ const server = createServer((req, res) => {
             }
         });
     } else {
-        res.writeHead(404, { 'Content-Type': 'text/plain' });
-        res.end('Not Found');
+        const url = req.url
+        try {
+            const type = mime.getType("." + url)
+            if (type) res.setHeader("Content-Type", type)
+            const file = fs.readFileSync(path.join("./src/renderer", url ?? ""))
+            res.writeHead(200)
+            res.end(file)
+        } catch (err) {
+            console.log(err)
+            res.writeHead(404, { 'Content-Type': 'text/plain' });
+            res.end('Not Found');
+        }
     }
 });
 
