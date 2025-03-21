@@ -1,7 +1,9 @@
+import BlockChainFactory from '@Commons/bfactory';
 import { app, BrowserWindow } from 'electron';
 import path from 'path';
 
 let mainWindow: BrowserWindow | null = null;
+const factory = new BlockChainFactory()
 
 app.on('ready', () => {
     mainWindow = new BrowserWindow({

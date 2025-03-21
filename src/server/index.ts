@@ -4,9 +4,11 @@ import fs from 'fs'
 import { readFile } from 'fs';
 import { join } from 'path';
 import { Mime } from "mime"
+import BlockChainFactory from '@Commons/bfactory';
 
 export const PORT = 3000;
 const mime = new Mime()
+const factory = new BlockChainFactory()
 
 // 정적 파일 서비스 (index.html)
 const server = createServer((req, res) => {

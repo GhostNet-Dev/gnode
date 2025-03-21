@@ -13,7 +13,6 @@ import { Transaction } from "@GBlibs/txs/txtypes";
  */
 export default class Blockchain {
   private pbft: PBFTConsensus;
-  private validatorManager: ValidatorManager;
   private blockManager: BlockManager;
   private txManager: TransactionManager;
   private pendingPool: PendingTransactionPool;
@@ -22,7 +21,6 @@ export default class Blockchain {
   private minTxPerBlock: number = 1;
 
   constructor(
-    validatorManager: ValidatorManager,
     blockManager: BlockManager,
     txManager: TransactionManager,
     pbft: PBFTConsensus,
@@ -30,7 +28,6 @@ export default class Blockchain {
     pendingPool: PendingTransactionPool,
     keyManager: KeyManager
   ) {
-    this.validatorManager = validatorManager;
     this.blockManager = blockManager;
     this.txManager = txManager;
     this.pbft = pbft;
@@ -91,22 +88,24 @@ export default class Blockchain {
    */
   private async adjustMinTxPerBlock() {
     const blocks = await this.blockManager.getBlockchain();
-    if (blocks.length < 600) return;
+    if (blocks.length < 600) return; // 600개 이상 블록이 누적되지 않으면 조절하지 않음
 
     const firstBlock = blocks[blocks.length - 600];
     const lastBlock = blocks[blocks.length - 1];
 
     const timeElapsed = lastBlock.timestamp - firstBlock.timestamp;
-    const expectedTime = 600 * 10;
+    const expectedTime = 600 * 10; // 10분 (600초)
 
-    if (timeElapsed < expectedTime) {
-      this.minTxPerBlock += 1;
-    } else if (timeElapsed > expectedTime) {
-      this.minTxPerBlock = Math.max(1, this.minTxPerBlock - 1);
-    }
+    // 🔢 속도 비율 계산 (1보다 작으면 너무 빠름, 크면 느림)
+    const speedRatio = expectedTime / timeElapsed;
+
+    // 🔄 최소 트랜잭션 개수 조정 (비율 기반)
+    const adjustmentFactor = Math.max(0.1, Math.min(2, speedRatio)); // 조정값을 0.1 ~ 2 사이로 제한
+    this.minTxPerBlock = Math.max(1, Math.floor(this.minTxPerBlock * adjustmentFactor));
 
     console.log(`🔄 [Blockchain] 블록 생성 속도 조정 완료: 최소 트랜잭션 개수 = ${this.minTxPerBlock}`);
   }
+
 
   /**
    * ✅ 블록 생성 및 PBFT 합의 요청
@@ -130,8 +129,8 @@ export default class Blockchain {
   private async processBlock(newBlock: Block) {
     console.log(`✅ [Blockchain] 블록 검증 중: ${newBlock.index}`);
 
-    const latestBlock = this.blockManager.getLatestBlock();
-    if (!(await this.blockManager.isValidBlock(newBlock, latestBlock, this.txManager))) {
+    const latestBlock = await this.blockManager.getLatestBlock();
+    if (latestBlock != null && !(await this.blockManager.isValidBlock(newBlock, latestBlock, this.txManager))) {
       console.log(`❌ [Blockchain] 블록 검증 실패: ${newBlock.index}`);
       return;
     }

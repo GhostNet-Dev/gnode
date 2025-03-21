@@ -21,6 +21,7 @@ export default class DHTPeer {
         this.keyValueStore = new Map();
         this.initHandler()
         this.setupPeerEvents();
+        console.log("node id = " + id)
     }
 
     /**
