@@ -1,14 +1,14 @@
 import { IChannel } from "@Commons/icom";
 
-let Channel: new () => IChannel;
+let Channel: new (p: number) => IChannel;
 
-// 환경 감지
-if (typeof window !== "undefined" && (window as any).process && (window as any).process.type) {
+if (typeof window !== "undefined" && (window as any).process?.type) {
     // Electron 환경
-    Channel = require("../main/ipc").Ipc;
+    Channel = eval('require')("../main/ipc").default;
 } else {
     // Web 환경
-    Channel = require("../server/wsocket").Socket;
+    const mode = require("../libs/src/webs/network/wsocket");
+    Channel = mode.default
 }
 
 export { Channel };

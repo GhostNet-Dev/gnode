@@ -7,7 +7,11 @@ export default class Page {
     page?: string
     active: boolean = false
 
-    constructor(protected url: string) {}
+    constructor(protected url: string, { preload = false } = {}) {
+        if (preload) {
+            this.LoadHtml()
+        }
+    }
     addHtml(html: string) {
         const content = document.querySelector("contents") as HTMLDivElement
         content.insertAdjacentHTML("beforeend", html)

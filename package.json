@@ -6,10 +6,12 @@
   "scripts": {
     "build:electron": "tsc && webpack --config webpack.config.electron.js",
     "build:web": "tsc && webpack --config webpack.config.web.js",
+    "build:renderer": "tsc && webpack --config webpack.config.renderer.js",
     "start:electron": "node dist/main/index.js",
     "start:web": "node dist/server/index.js"
   },
   "dependencies": {
+    "chart.js": "^4.4.8",
     "classic-level": "^2.0.0",
     "electron": "^35.0.0",
     "level": "^9.0.0",

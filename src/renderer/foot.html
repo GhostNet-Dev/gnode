@@ -1,0 +1,32 @@
+
+<!-- 모바일 하단 탭 메뉴 -->
+<nav class="navbar fixed-bottom bg-white d-md-none border-top shadow-sm">
+    <div class="scroll-tabs px-2 text-center" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap; justify-content: flex-start; align-items: center;">
+        <style>
+@media (min-width: 768px) {
+    .scroll-tabs {
+        justify-content: center !important;
+    }
+}
+        </style>
+        <button class="btn text-center mx-2" onclick="showCard('blockchain')">
+            <span class="material-symbols-outlined d-block">dns</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('account')">
+            <span class="material-symbols-outlined d-block">account_circle</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('mining')">
+            <span class="material-symbols-outlined d-block">work</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('network')">
+            <span class="material-symbols-outlined d-block">network_check</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('settings')">
+            <span class="material-symbols-outlined d-block">settings</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('logs')">
+            <span class="material-symbols-outlined d-block">description</span>
+        </button>
+    </div>
+</nav>
+
