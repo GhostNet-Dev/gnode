@@ -3,7 +3,6 @@ import Page from "./page";
 export default class Card extends Page {
     constructor(url: string, private id: string, private title: string) {
         super(url, { preload: false })
-        this.LoadHtml()
     }
 
     async LoadHtml(...html: string[]) {

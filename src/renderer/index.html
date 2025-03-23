@@ -31,12 +31,6 @@
   <main class="container my-4">
     <div class="row g-4" id="cardContainer">
       <div class="col-12 col-md-4 card-box" data-card="blockchain" id="bcinfo">
-        <div class="card fade-slide p-3 shadow">
-          <h5 class="card-title">블록체인 정보</h5>
-          <p>블록 높이: 1,293,800</p>
-          <p>최근 블록 해시: a3f98d...d3b1</p>
-          <p>전체 트랜잭션: 23,520,112</p>
-        </div>
       </div>
 
       <div class="col-12 col-md-4 card-box" data-card="account">
@@ -48,14 +42,7 @@
         </div>
       </div>
 
-      <div class="col-12 col-md-4 card-box" data-card="mining">
-        <div class="card fade-slide p-3 shadow">
-          <h5 class="card-title">채굴 통계</h5>
-          <canvas id="miningChart" height="200"></canvas>
-          <p>기여도: 12.4%</p>
-          <p>나의 해시레이트: 3.1 GH/s</p>
-          <p>누적 수익: 6.32 XYZ</p>
-        </div>
+      <div class="col-12 col-md-4 card-box" data-card="mining" id="mininginfo">
       </div>
 
       <div class="col-12 col-md-4 card-box" data-card="network">
@@ -64,15 +51,6 @@
           <p>노드 수: 12,498</p>
           <p>평균 블록 생성 시간: 6.3초</p>
           <p>네트워크 트래픽: 1.2 MB/s</p>
-        </div>
-      </div>
-
-      <div class="col-12 col-md-4 card-box" data-card="settings">
-        <div class="card fade-slide p-3 shadow">
-          <h5 class="card-title">노드 설정</h5>
-          <p>포트: 30303</p>
-          <p>싱크 상태: 완료</p>
-          <p>피어 수: 17</p>
         </div>
       </div>
 
@@ -85,6 +63,15 @@
         </div>
       </div>
     </div>
+
+      <div class="col-12 col-md-4 card-box" data-card="settings">
+        <div class="card fade-slide p-3 shadow">
+          <h5 class="card-title">노드 설정</h5>
+          <p>포트: 30303</p>
+          <p>싱크 상태: 완료</p>
+          <p>피어 수: 17</p>
+        </div>
+      </div>
   </main>
     </contents>
     <footer></footer>

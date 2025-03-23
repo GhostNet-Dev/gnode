@@ -18,7 +18,8 @@
     "mime": "^4.0.6",
     "node-gyp-build": "^4.8.4",
     "peerjs": "^1.5.4",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "ws": "^8.18.1"
   },
   "devDependencies": {
     "electron-builder": "^25.1.8",

@@ -5,6 +5,8 @@ import { readFile } from 'fs';
 import { join } from 'path';
 import { Mime } from "mime"
 import BlockChainFactory from '@Commons/bfactory';
+import { C2SMsg, Handler } from '@Commons/icom';
+const WebSocketServer = require('ws');
 
 export const PORT = 3000;
 const mime = new Mime()
@@ -52,5 +54,26 @@ const server = createServer((req, res) => {
 
 server.listen(PORT, () => {
     console.log(`✅ Web Server running at http://localhost:${PORT}/`);
+});
+
+
+const wss = new WebSocketServer.Server({ port: 3001 });
+const g_handler: Handler = {
+    "checkbin": (ws: any, filename: string) => {
+        ws.send(JSON.stringify({ types: "reply_checkbin", params: filename }));
+    },
+}
+wss.on("connection", (ws: any) => {
+    console.log("connect");
+    ws.on("message", (data: any) => {
+        const msg: C2SMsg = JSON.parse(data);
+        g_handler[msg.types](ws, ...msg.params);
+    });
+    ws.on("close", () => {
+        console.log("disconnect");
+    });
+    ws.onerror = function () {
+        console.log("error occurred");
+    }
 });
 

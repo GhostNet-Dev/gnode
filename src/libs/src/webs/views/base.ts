@@ -9,7 +9,7 @@ export class Base {
 
     constructor(basePath: string, funcMap: FuncMap) {
         this.m_basePath = basePath
-        
+
         this.beforPage = ""
         this.funcMap = funcMap
     }
@@ -49,9 +49,9 @@ export class Base {
     public includeHTML(id: string, filename: string) {
         return fetch(filename)
             .then(response => { return response.text(); })
-            .then(data => { 
+            .then(data => {
                 const dom = document.querySelector(id) as HTMLDivElement
-                if (dom) dom.innerHTML = data; 
+                if (dom) dom.innerHTML = data;
             })
     }
 
@@ -88,15 +88,10 @@ export class Base {
             }
             const fade = card.querySelector('.fade-slide');
             if (isMatch || !this.isMobile()) {
-                setTimeout(() => { 
-                    console.log("show")
-                    fade?.classList.add('show') 
-                }, 100);
+                setTimeout(() => { fade?.classList.add('show') }, 100);
             } else {
                 fade?.classList.remove('show');
             }
         });
-}
-
-
+    }
 }
