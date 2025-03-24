@@ -7,7 +7,7 @@ import Mining from "./views/mining";
 export default class RendererFactory {
     channel: IChannel = new Channel(3001)
     bcInfo = new BcInfo()
-    mining = new Mining()
+    mining = new Mining(this.channel)
 
     async Initialize() {
         await this.bcInfo.LoadHtml()
@@ -16,7 +16,8 @@ export default class RendererFactory {
 
     public Build(): FuncMap {
         const funcMap: FuncMap = {
-            "bcInfo": this.bcInfo,
+            "bcinfo": this.bcInfo,
+            "mininginfo": this.mining,
         };
         return funcMap;
     }

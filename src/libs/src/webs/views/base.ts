@@ -34,6 +34,10 @@ export class Base {
 
         history.pushState(state, "login", "./?pageid=" + key + args)
 
+        await this.execute(key)
+
+    };
+    async execute(key: string) {
         const beforePageObj = this.CurrentPage
         if (beforePageObj != undefined) {
             beforePageObj.Release();
@@ -43,8 +47,7 @@ export class Base {
         if (this.CurrentPage != undefined) {
             await this.CurrentPage.Run();
         }
-
-    };
+    }
 
     public includeHTML(id: string, filename: string) {
         return fetch(filename)
@@ -78,7 +81,7 @@ export class Base {
 
     isMobile() { return window.innerWidth < 768 }
 
-    showCard(type: string) {
+    async showCard(type: string) {
         document.querySelectorAll('.card-box').forEach((card) => {
             const isMatch = card.getAttribute('data-card') === type;
             if (this.isMobile()) {
@@ -88,6 +91,7 @@ export class Base {
             }
             const fade = card.querySelector('.fade-slide');
             if (isMatch || !this.isMobile()) {
+                this.execute(card.id);
                 setTimeout(() => { fade?.classList.add('show') }, 100);
             } else {
                 fade?.classList.remove('show');

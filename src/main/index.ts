@@ -1,6 +1,8 @@
 import BlockChainFactory from '@Commons/bfactory';
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
+import { RouteType } from 'src/types/routetypes';
+import { stringToBytes } from 'uuid/dist/cjs/v35';
 
 let mainWindow: BrowserWindow | null = null;
 const factory = new BlockChainFactory()
@@ -19,6 +21,10 @@ app.on('ready', () => {
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
+    ipcMain.on(RouteType.LoadKeysReq, async (evt, id: string, pass: string) => {
+        const ret = await factory.route.LoadKeys(id, pass)
+        evt.reply(RouteType.LoadKeysRes, ret)
+    })
 });
 
 app.on('window-all-closed', () => {

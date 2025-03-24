@@ -55,7 +55,7 @@ export default class KeyManager {
   /**
    * ✅ 키 저장 (개인키는 비밀번호로 암호화)
    */
-  async saveKeyPair(id: string, privateKey: string, publicKey: string, password: string) {
+  async saveKeyPair(id: string, password: string, privateKey: string, publicKey: string) {
     const encryptedPrivateKey = this.encryptPrivateKey(privateKey, password);
     await keyDB.put(`${id}:private`, encryptedPrivateKey);
     await keyDB.put(`${id}:public`, publicKey);

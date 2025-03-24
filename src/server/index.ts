@@ -6,6 +6,7 @@ import { join } from 'path';
 import { Mime } from "mime"
 import BlockChainFactory from '@Commons/bfactory';
 import { C2SMsg, Handler } from '@Commons/icom';
+import { RouteType } from "../types/routetypes"
 const WebSocketServer = require('ws');
 
 export const PORT = 3000;
@@ -59,8 +60,9 @@ server.listen(PORT, () => {
 
 const wss = new WebSocketServer.Server({ port: 3001 });
 const g_handler: Handler = {
-    "checkbin": (ws: any, filename: string) => {
-        ws.send(JSON.stringify({ types: "reply_checkbin", params: filename }));
+    [RouteType.LoadKeysReq]: async (ws: any, id: string, pass: string) => {
+        const ret = await factory.route.LoadKeys(id, pass)
+        ws.send(JSON.stringify({ types: RouteType.LoadKeysRes, params: ret }));
     },
 }
 wss.on("connection", (ws: any) => {

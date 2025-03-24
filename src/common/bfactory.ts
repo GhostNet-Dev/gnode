@@ -7,6 +7,8 @@ import PendingTransactionPool from "@GBlibs/txs/pendingtxs";
 import TransactionManager from "@GBlibs/txs/txs";
 import Blockchain from "./blockchain";
 import KeyManager from "@GBlibs/key/keys";
+import AppRoutes from "./router";
+import KeyMaker from "./keymaker";
 
 export default class BlockChainFactory {
     valid = new ValidatorManager()
@@ -14,15 +16,18 @@ export default class BlockChainFactory {
     txs = new TransactionManager()
     pendingPool = new PendingTransactionPool()
     keys = new KeyManager()
+    keyMaker = new KeyMaker(this.keys)
 
     /* Network */
-    dhtPeer = new DHTPeer()
+    dhtPeer = new DHTPeer(this.keyMaker.pubkey)
     net = new GossipP2P(this.dhtPeer)
 
     pbftCons = new PBFTConsensus(this.valid, this.blocks, this.txs, this.net)
 
     blockChain = new Blockchain(this.blocks, this.txs, this.pbftCons, this.net, 
         this.pendingPool, this.keys)
+
+    route = new AppRoutes(this.keyMaker)
 
     constructor() {
 

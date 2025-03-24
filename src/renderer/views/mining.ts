@@ -1,3 +1,4 @@
+import { IChannel } from "@Commons/icom";
 import Card from "@GBlibs/webs/views/card";
 import { IPage } from "@GBlibs/webs/views/page";
 import {
@@ -11,6 +12,7 @@ import {
   Tooltip,
   Filler
 } from 'chart.js';
+import { RouteType } from "../../types/routetypes";
 
 Chart.register(
   LineController,
@@ -24,12 +26,16 @@ Chart.register(
 );
 
 export default class Mining extends Card implements IPage {
-    constructor() {
+    constructor(private ch: IChannel) {
         super("html/mining.html", "mininginfo", "Mining Statics")
     }
     Release(): void {
     }
     async Run(): Promise<boolean> {
+        this.ch.SendMsg(RouteType.LoadKeysReq, "test", "testpass")
+        this.ch.RegisterMsgHandler(RouteType.LoadKeysRes, (ret: boolean) => {
+            console.log(ret)
+        })
         return false
     }
     async LoadHtml() {
