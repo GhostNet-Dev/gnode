@@ -4,14 +4,16 @@ export type S2CMsg = { types: string, params: any }
 export type C2SMsg = { types: string, params: any[] }
 
 export default class Socket {
-    m_opend: boolean;
-    m_ws: WebSocket;
+    m_opend = false
+    m_ws!: WebSocket;
     m_handler: Handler;
     
-    public constructor(port: number) {
-        this.m_ws = new WebSocket(`ws://${window.location.hostname}:${port}`);
-        this.m_opend = false;
+    constructor(private port: number) {
         this.m_handler = {};
+        this.Open(port)
+    }
+    Open(port: number) {
+        this.m_ws = new WebSocket(`ws://${window.location.hostname}:${port}`);
 
         this.m_ws.onopen = () => {
             this.m_handler["open"]?.();
@@ -33,6 +35,7 @@ export default class Socket {
             })
         };
         this.m_ws.onclose = () => {
+            this.m_opend = false
             this.m_handler["close"]?.();
         }
     }
@@ -47,6 +50,7 @@ export default class Socket {
     public SendMsg(eventName: string, ...params: any[]) {
         if(!this.m_opend) {
             this.waitQ.push({ eventName: eventName, params: params })
+            this.Open(this.port)
             return
         }
         

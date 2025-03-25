@@ -68,34 +68,4 @@ export class Base {
         this.CurrentPage = this.funcMap[key];
         await this.CurrentPage?.Run();
     }
-    public Initialize() {
-        this.includeHTML("header", "navbar.html");
-        this.includeHTML("footer", "foot.html");
-    }
-
-    resize() {
-        const current = document.querySelector('.card-box[style*="display: block"]');
-        const type = current?.getAttribute('data-card') || 'blockchain';
-        this.showCard(type);
-    }
-
-    isMobile() { return window.innerWidth < 768 }
-
-    async showCard(type: string) {
-        document.querySelectorAll('.card-box').forEach((card) => {
-            const isMatch = card.getAttribute('data-card') === type;
-            if (this.isMobile()) {
-                (card as HTMLElement).style.display = isMatch ? 'block' : 'none';
-            } else {
-                (card as HTMLElement).style.display = 'block';
-            }
-            const fade = card.querySelector('.fade-slide');
-            if (isMatch || !this.isMobile()) {
-                this.execute(card.id);
-                setTimeout(() => { fade?.classList.add('show') }, 100);
-            } else {
-                fade?.classList.remove('show');
-            }
-        });
-    }
 }

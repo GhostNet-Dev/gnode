@@ -1,0 +1,79 @@
+
+  <!-- Main Content -->
+  <main class="container my-4">
+    <div class="row g-4" id="cardContainer">
+      <div class="col-12 col-md-4 card-box" data-card="blockchain" id="bcinfo">
+      </div>
+
+      <div class="col-12 col-md-4 card-box" data-card="account">
+        <div class="card fade-slide p-3 shadow">
+          <h5 class="card-title">내 계정</h5>
+          <p>주소: 0x1234...abcd</p>
+          <p>보유량: 152.73 XYZ</p>
+          <p>최근 전송: 2025-03-20 16:12</p>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 card-box" data-card="mining" id="mininginfo">
+      </div>
+
+      <div class="col-12 col-md-4 card-box" data-card="network">
+        <div class="card fade-slide p-3 shadow">
+          <h5 class="card-title">네트워크 현황</h5>
+          <p>노드 수: 12,498</p>
+          <p>평균 블록 생성 시간: 6.3초</p>
+          <p>네트워크 트래픽: 1.2 MB/s</p>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 card-box" data-card="logs">
+        <div class="card fade-slide p-3 shadow">
+          <h5 class="card-title">로그 보기</h5>
+          <p>[03:22:13] 블록 처리 완료</p>
+          <p>[03:22:15] 트랜잭션 수신</p>
+          <p>[03:22:18] 피어 연결 해제</p>
+        </div>
+      </div>
+
+      <div class="col-12 col-md-4 card-box" data-card="settings">
+        <div class="card fade-slide p-3 shadow">
+          <h5 class="card-title">노드 설정</h5>
+          <p>포트: 30303</p>
+          <p>싱크 상태: 완료</p>
+          <p>피어 수: 17</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+<!-- 모바일 하단 탭 메뉴 -->
+<nav class="navbar fixed-bottom bg-white d-md-none border-top shadow-sm">
+    <div class="scroll-tabs px-2 text-center" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap; justify-content: flex-start; align-items: center;">
+        <style>
+@media (min-width: 768px) {
+    .scroll-tabs {
+        justify-content: center !important;
+    }
+}
+        </style>
+        <button class="btn text-center mx-2" onclick="showCard('blockchain')">
+            <span class="material-symbols-outlined d-block">dns</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('account')">
+            <span class="material-symbols-outlined d-block">account_circle</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('mining')">
+            <span class="material-symbols-outlined d-block">work</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('network')">
+            <span class="material-symbols-outlined d-block">network_check</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('settings')">
+            <span class="material-symbols-outlined d-block">settings</span>
+        </button>
+        <button class="btn text-center mx-2" onclick="showCard('logs')">
+            <span class="material-symbols-outlined d-block">description</span>
+        </button>
+    </div>
+</nav>
+

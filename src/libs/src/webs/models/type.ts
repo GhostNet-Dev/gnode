@@ -3,7 +3,6 @@ import { GhostWebUser } from "./param.js";
 
 declare global {
     interface Window {
-        ClickLoadPage: (key: string, from: boolean, ...arg: string[]) => void;
         MasterAddr: string;
         AdminMasterAddr: string;
         AdminAddr: string;
@@ -13,6 +12,7 @@ declare global {
 }
 
 export type FuncMap = { [key: string]: IPage };
+export type CardMap = { [key: string]: IPage };
 
 export type UserAccount = {
     id: string,
