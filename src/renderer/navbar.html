@@ -6,12 +6,19 @@
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarMenu">
-            <ul class="navbar-nav ms-auto mb-2 mb-md-0">
+            <ul class="navbar-nav ms-auto mb-2 mb-md-0" style="display: none;" id="navbarLoginMenu">
                 <li class="nav-item">
-                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#loginModal" onclick="ClickLoadPage('login', false)">로그인</a>
+                    <a class="nav-link" href="#" onclick="ClickLoadPage('login', false)">로그인</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#signupModal" onclick="ClickLoadPage('makeacc', false)">회원가입</a>
+                    <a class="nav-link" href="#" onclick="ClickLoadPage('makeacc', false)">회원가입</a>
+                </li>
+            </ul>
+            <ul class="navbar-nav ms-auto mb-2 mb-md-0" id="navbarLogoutMenu">
+                <li class="nav-item" id="accountTxt">
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#" onclick="ClickLoadPage('logout', false)">로그아웃</a>
                 </li>
             </ul>
         </div>

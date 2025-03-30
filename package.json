@@ -10,9 +10,13 @@
     "start:web": "node dist/server/index.js"
   },
   "dependencies": {
+    "bs58check": "^4.0.0",
     "chart.js": "^4.4.8",
     "classic-level": "^2.0.0",
     "electron": "^35.0.0",
+    "elliptic": "^6.6.1",
+    "js-sha256": "^0.11.0",
+    "jsonwebtoken": "^9.0.2",
     "level": "^9.0.0",
     "mime": "^4.0.6",
     "node-gyp-build": "^4.8.4",
@@ -21,6 +25,8 @@
     "ws": "^8.18.1"
   },
   "devDependencies": {
+    "@types/elliptic": "^6.4.18",
+    "@types/jsonwebtoken": "^9.0.9",
     "electron-builder": "^25.1.8",
     "ts-loader": "^9.5.2",
     "typescript": "^5.8.2",

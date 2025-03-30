@@ -1,4 +1,5 @@
 import { createServer } from 'http';
+import { parse } from 'url'
 import path from "path"
 import fs from 'fs'
 import { readFile } from 'fs';
@@ -15,7 +16,9 @@ const factory = new BlockChainFactory()
 
 // 정적 파일 서비스 (index.html)
 const server = createServer((req, res) => {
-    if (req.url === '/' || req.url === '/index.html') {
+    const parseUrl = parse(req.url || '/', true)
+    const pathName = parseUrl.pathname
+    if (pathName === '/' || pathName === '/index.html') {
         readFile(join(__dirname, '../../src/renderer/index.html'), (err, data) => {
             if (err) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
@@ -26,7 +29,7 @@ const server = createServer((req, res) => {
                 res.end(data);
             }
         });
-    } else if (req.url === '/client.js') {
+    } else if (pathName === '/client.js') {
         // 클라이언트 스크립트 서빙
         readFile(join(__dirname, '../../dist/renderer/index.js'), (err, data) => {
             if (err) {
@@ -63,6 +66,23 @@ const g_handler: Handler = {
     [RouteType.LoadKeysReq]: async (ws: any, id: string, pass: string) => {
         const ret = await factory.route.LoadKeys(id, pass)
         ws.send(JSON.stringify({ types: RouteType.LoadKeysRes, params: ret }));
+    },
+    [RouteType.MakeAccountReq]: async (ws: any, id: string, pass: string) => {
+        const ret = await factory.route.MakeAccount(id, pass)
+        ws.send(JSON.stringify({ types: RouteType.LoadKeysRes, params: ret }));
+    },
+    [RouteType.AccountListReq]: async (ws: any) => {
+        const ret = await factory.route.GetAcountList()
+        ws.send(JSON.stringify({ types: RouteType.AccountListRes, params: ret }));
+    },
+    [RouteType.LoginReq]: async (ws: any, id: string, pass: string) => {
+        const ret = await factory.route.Login(id, pass)
+        console.log(id, pass, ret)
+        ws.send(JSON.stringify({ types: RouteType.LoginRes, params: ret }));
+    },
+    [RouteType.SessionCheckReq]: async (ws: any, token: string) => {
+        const ret = await factory.route.SessionCheck(token)
+        ws.send(JSON.stringify({ types: RouteType.SessionCheckRes, params: ret }));
     },
 }
 wss.on("connection", (ws: any) => {

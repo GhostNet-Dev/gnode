@@ -1,13 +1,73 @@
+import { IChannel } from "@Commons/icom";
 import Page, { IPage } from "@GBlibs/webs/views/page";
+import { sha256 } from "js-sha256";
+import { RouteType } from "../../types/routetypes";
+import Sessions from "@GBlibs/webs/sessions/session";
 
 export default class LoginPage extends Page implements IPage {
-  constructor() {
+  id = ""
+  constructor(private ch: IChannel, private sess: Sessions) {
     super("html/login.html")
+
+    this.ch.RegisterMsgHandler(RouteType.AccountListRes, (data: { key: string, value: string }[]) => {
+      const dom = document.getElementById("acclist")
+      let html = ""
+      if (data.length > 0 && dom) {
+        data.forEach((entry) => {
+          html += `
+          <li class="list-group-item" onclick="
+            document.getElementById('id').value='${entry.key}'
+          ">${entry.key}@${entry.value}</li>
+          `
+        })
+        dom.innerHTML = html
+      }
+    })
+    this.ch.RegisterMsgHandler(RouteType.LoginRes, (res: { ret: boolean, token: string }) => {
+      const resultEl = document.getElementById('result') as HTMLDivElement;
+      if (res.ret) {
+        this.sess.saveToken(res.token)
+        resultEl.textContent = '로그인 성공!';
+        // TODO: redirect or save token
+        this.SuccessLogin()
+      } else {
+        resultEl.textContent = '로그인 실패';
+      }
+    })
+    this.ch.RegisterMsgHandler(RouteType.SessionCheckRes, async (userId: string | null) => {
+      if (userId != null) {
+        this.SuccessLogin()
+      } else {
+        await this.LoadHtml()
+        this.binding()
+        this.GetAccountList()
+      }
+    })
+    this.ch.RegisterMsgHandler(RouteType.SessionFailNoti, () => {
+      this.sess.removeToken()
+      window.ClickLoadPage('login', false)
+    })
+  }
+  SuccessLogin() {
+    const menu = document.getElementById('navbarLoginMenu') as HTMLUListElement;
+    menu.style.display = "none"
+    const menuOut = document.getElementById('navbarLogoutMenu') as HTMLUListElement;
+    menuOut.style.display = "block"
+    const acc = document.getElementById('accountTxt') as HTMLLIElement;
+    acc.innerText = this.id
+
+    window.ClickLoadPage('dashboard', false)
   }
 
   async Run(): Promise<boolean> {
-    await this.LoadHtml()
-    this.binding()
+    const token = this.sess.getToken()
+    if (token) {
+      this.ch.SendMsg(RouteType.SessionCheckReq, token)
+    } else {
+      await this.LoadHtml()
+      this.binding()
+      this.GetAccountList()
+    }
     return true
   }
   Release(): void {
@@ -15,41 +75,29 @@ export default class LoginPage extends Page implements IPage {
 
   }
   async hashPassword(password: string) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return sha256(password)
   }
   binding() {
-    (document.getElementById('loginForm') as HTMLFormElement).addEventListener('submit', async (e) => {
-      e.preventDefault();
+    const menu = document.getElementById('navbarLoginMenu') as HTMLUListElement;
+    menu.style.display = "block"
+    const menuOut = document.getElementById('navbarLogoutMenu') as HTMLUListElement;
+    menuOut.style.display = "none"
 
-      const email = (document.getElementById('email') as HTMLInputElement).value;
+    const btn = document.getElementById('loginBtn') as HTMLButtonElement;
+    btn.onclick = async () => {
+      const id = (document.getElementById('id') as HTMLInputElement).value;
       const passwordRaw = (document.getElementById('password') as HTMLInputElement).value;
       const passwordHashed = await this.hashPassword(passwordRaw);
 
       // 보안: 실제 API 요청 시 HTTPS 사용 + 서버에서 해시 검증
+
       const resultEl = document.getElementById('result') as HTMLDivElement;
       resultEl.textContent = '처리 중...';
-
-      try {
-        const response = await fetch('/api/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password: passwordHashed })
-        });
-
-        const data = await response.json();
-        if (response.ok) {
-          resultEl.textContent = '로그인 성공!';
-          // TODO: redirect or save token
-        } else {
-          resultEl.textContent = data.message || '로그인 실패';
-        }
-      } catch (err) {
-        resultEl.textContent = '서버 연결 오류';
-      }
-    });
+      this.ch.SendMsg(RouteType.LoginReq, id, passwordHashed)
+      this.id = id
+    }
+  }
+  GetAccountList() {
+    this.ch.SendMsg(RouteType.AccountListReq)
   }
 }

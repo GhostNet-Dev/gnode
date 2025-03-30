@@ -7,6 +7,7 @@ export default class Socket {
     m_opend = false
     m_ws!: WebSocket;
     m_handler: Handler;
+    token = ""
     
     constructor(private port: number) {
         this.m_handler = {};
@@ -56,8 +57,11 @@ export default class Socket {
         
         const msg: C2SMsg = {
             types: eventName,
-            params: [...params],
+            params: [...params, this.token],
         }
         this.m_ws.send(JSON.stringify(msg))
+    }
+    SetSession(token: string) {
+        this.token = token
     }
 }

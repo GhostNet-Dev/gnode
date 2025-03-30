@@ -9,6 +9,7 @@ import Blockchain from "./blockchain";
 import KeyManager from "@GBlibs/key/keys";
 import AppRoutes from "./router";
 import KeyMaker from "./keymaker";
+import SessionServer from "@GBlibs/webs/sessions/sessionserver";
 
 export default class BlockChainFactory {
     valid = new ValidatorManager()
@@ -17,6 +18,7 @@ export default class BlockChainFactory {
     pendingPool = new PendingTransactionPool()
     keys = new KeyManager()
     keyMaker = new KeyMaker(this.keys)
+    session = new SessionServer()
 
     /* Network */
     dhtPeer = new DHTPeer(this.keyMaker.pubkey)
@@ -27,7 +29,7 @@ export default class BlockChainFactory {
     blockChain = new Blockchain(this.blocks, this.txs, this.pbftCons, this.net, 
         this.pendingPool, this.keys)
 
-    route = new AppRoutes(this.keyMaker)
+    route = new AppRoutes(this.keyMaker, this.session)
 
     constructor() {
 

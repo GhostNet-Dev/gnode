@@ -7,13 +7,29 @@ export default class KeyMaker {
     privKey?: string
     constructor(private kmgr: KeyManager) {
     }
+    
+    async Login(id: string, pass: string) {
+        const pubKey = await this.kmgr.getPublicKey(id)
+        const privKey = await this.kmgr.getPrivateKey(id, pass)
+        if (privKey == null) return false
 
-    MakeNewAccount(id: string, pass: string) {
+        const newPub = this.kmgr.derivePublicKeyFromPrivateKey(privKey)
+        if(newPub === pubKey) return true
+
+        return false
+    }
+
+    async GetAccountList() {
+        return await this.kmgr.listAllKeysWithValues()
+    }
+    async MakeNewAccount(id: string, pass: string) {
         const pair = this.kmgr.generateKeyPair()
-        this.kmgr.saveKeyPair(id, pass, pair.privateKey, pair.publicKey)
+        const pubKey = pair.publicKey
+        const pirvKey = this.kmgr.encryptPrivateKey(pair.privateKey, pass)
+        const ret = await this.kmgr.saveKeyPair(id, pass, pair.privateKey, pair.publicKey)
         this.pubkey = pair.publicKey
         this.privKey = pair.privateKey
-        return pair.publicKey
+        return {ret, pubKey, pirvKey}
     }
     async LoadKeyPair(id: string, pass: string) {
         try {

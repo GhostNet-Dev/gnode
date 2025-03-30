@@ -17,11 +17,22 @@ export default class DashboardPage extends Page implements IPage {
             await (card as unknown as Card).LoadHtml()
         }))
     }
+    async ViewMenu() {
+        const footer = document.getElementById("footer")
+        if(!footer) throw new Error("where is foot!!");
+        
+        footer.parentNode?.removeChild(footer)
+        document.body.appendChild(footer)
+        footer.style.position = "fixed"
+        footer.style.bottom = "0"
+        footer.style.left = "0"
+    }
 
     async Run(): Promise<boolean> {
         console.log("dashboard")
         await this.LoadHtml()
         await this.LoadCardHtml()
+        await this.ViewMenu()
         this.showCard('blockchain');
         return true
     }

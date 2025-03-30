@@ -47,15 +47,22 @@
   </main>
 
 <!-- 모바일 하단 탭 메뉴 -->
-<nav class="navbar fixed-bottom bg-white d-md-none border-top shadow-sm">
-    <div class="scroll-tabs px-2 text-center" style="overflow-x: auto; white-space: nowrap; display: flex; flex-wrap: nowrap; justify-content: flex-start; align-items: center;">
-        <style>
+<style>
 @media (min-width: 768px) {
     .scroll-tabs {
         justify-content: center !important;
     }
 }
         </style>
+<footer id="footer">
+<nav class="navbar fixed-bottom bg-white d-md-none border-top shadow-sm">
+    <div class="scroll-tabs px-2 text-center" style="overflow-x: auto; 
+        white-space: nowrap; 
+        display: flex; 
+        flex-wrap: nowrap; 
+        justify-content: flex-start; 
+        align-items: center;">
+        
         <button class="btn text-center mx-2" onclick="showCard('blockchain')">
             <span class="material-symbols-outlined d-block">dns</span>
         </button>
@@ -76,4 +83,4 @@
         </button>
     </div>
 </nav>
-
+</footer>

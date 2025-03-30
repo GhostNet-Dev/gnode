@@ -6,6 +6,8 @@ import Mining from "./cards/mining";
 import DashboardPage from "./views/dashboard";
 import LoginPage from "./views/login";
 import MakeAccountPage from "./views/makeaccount";
+import Sessions from "@GBlibs/webs/sessions/session";
+import LogoutPage from "./views/logout";
 
 declare global {
     interface Window {
@@ -16,10 +18,12 @@ declare global {
 
 export default class RendererFactory {
     channel: IChannel = new Channel(3001)
+    session = new Sessions()
     bcInfo = new BcInfo()
     mining = new Mining(this.channel)
-    login = new LoginPage()
-    makeAcc = new MakeAccountPage()
+    login = new LoginPage(this.channel, this.session)
+    logout = new LogoutPage(this.session)
+    makeAcc = new MakeAccountPage(this.channel)
     dash = new DashboardPage(this.BuildCard())
 
     async Initialize() {
@@ -31,6 +35,7 @@ export default class RendererFactory {
         const funcMap: FuncMap = {
             "dashboard": this.dash,
             "login": this.login,
+            "logout": this.logout,
             "makeacc": this.makeAcc,
             "main": this.login,
         };

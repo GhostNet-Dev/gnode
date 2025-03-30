@@ -28,14 +28,14 @@ Chart.register(
 export default class Mining extends Card implements IPage {
     constructor(private ch: IChannel) {
         super("html/mining.html", "mininginfo", "Mining Statics")
+        this.ch.RegisterMsgHandler(RouteType.LoadKeysRes, (ret: boolean) => {
+            console.log(ret)
+        })
     }
     Release(): void {
     }
     async Run(): Promise<boolean> {
         this.ch.SendMsg(RouteType.LoadKeysReq, "test", "testpass")
-        this.ch.RegisterMsgHandler(RouteType.LoadKeysRes, (ret: boolean) => {
-            console.log(ret)
-        })
         return false
     }
     async LoadHtml() {

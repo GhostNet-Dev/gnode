@@ -5,4 +5,5 @@ export type C2SMsg = { types: string, params: any[] }
 export interface IChannel {
     RegisterMsgHandler(eventName: string, params: any): void;
     SendMsg(eventName: string, ...params: any[]): void;
+    SetSession(token: string): void;
 }
