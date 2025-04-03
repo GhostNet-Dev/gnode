@@ -1,13 +1,25 @@
+import { IChannel } from "@Commons/icom";
+import { Block } from "@GBlibs/blocks/blocktypes";
+import { BlockInfo } from "@GBlibs/types/blockinfotypes";
 import Card from "@GBlibs/webs/views/card";
 import { IPage } from "@GBlibs/webs/views/page";
+import { RouteType } from "../../types/routetypes";
 
 export default class BcInfo extends Card implements IPage {
-    constructor() {
+    constructor(private ch: IChannel) {
         super("html/bcinfo.html", "bcinfo", "BlockChain Info")
+        ch.RegisterMsgHandler(RouteType.BlockInfoRes, (info: BlockInfo) => {
+            const getCnt = info.height - 10
+            this.ch.SendMsg(RouteType.BlockListReq, info.height, (getCnt > 0) ? getCnt : 0)
+        })
+        ch.RegisterMsgHandler(RouteType.BlockListRes, (blocks: Block[]) => {
+
+        })
     }
     Release(): void {
     }
     async Run(): Promise<boolean> {
+        this.ch.SendMsg(RouteType.BlockInfoReq)
         return false
     }
 }

@@ -178,8 +178,18 @@ export default class BlockManager {
 
   // ✅ 블록 저장
   async saveBlock(block: Block): Promise<void> {
+    await blockDB.put("latest", block);
     await blockDB.put(block.index.toString(), block);
     console.log(`✅ 블록 저장 완료: ${block.index}`);
+  }
+
+  async getLatestBlockIndex(): Promise<number> {
+      try {
+          const block = await blockDB.get("latest");
+          return block.index;
+      } catch {
+          return 0; // 제네시스만 있을 경우
+      }
   }
 
   // ✅ 블록 조회

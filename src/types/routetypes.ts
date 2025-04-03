@@ -10,4 +10,8 @@ export enum RouteType {
     SessionCheckReq = "sCheckReq",
     SessionCheckRes = "sCheckRes",
     SessionFailNoti = "sFail",
+    BlockInfoReq = "bInfoReq",
+    BlockInfoRes = "bInfoRes",
+    BlockListReq = "bListReq",
+    BlockListRes = "bListRes",
 }

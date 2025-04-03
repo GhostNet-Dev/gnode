@@ -17,11 +17,14 @@ export default class DashboardPage extends Page implements IPage {
             await (card as unknown as Card).LoadHtml()
         }))
     }
-    async ViewMenu() {
+    removeFooter() {
         const footer = document.getElementById("footer")
         if(!footer) throw new Error("where is foot!!");
-        
         footer.parentNode?.removeChild(footer)
+        return footer
+    }
+    async ViewMenu() {
+        const footer = this.removeFooter()
         document.body.appendChild(footer)
         footer.style.position = "fixed"
         footer.style.bottom = "0"
@@ -37,6 +40,7 @@ export default class DashboardPage extends Page implements IPage {
         return true
     }
     Release(): void {
+        this.removeFooter()
         this.ReleaseHtml()
     }
 }

@@ -8,6 +8,7 @@ import LoginPage from "./views/login";
 import MakeAccountPage from "./views/makeaccount";
 import Sessions from "@GBlibs/webs/sessions/session";
 import LogoutPage from "./views/logout";
+import AccountInfo from "./cards/account";
 
 declare global {
     interface Window {
@@ -19,7 +20,8 @@ declare global {
 export default class RendererFactory {
     channel: IChannel = new Channel(3001)
     session = new Sessions()
-    bcInfo = new BcInfo()
+    bcInfo = new BcInfo(this.channel)
+    accinfo = new AccountInfo(this.channel)
     mining = new Mining(this.channel)
     login = new LoginPage(this.channel, this.session)
     logout = new LogoutPage(this.session)
@@ -45,6 +47,7 @@ export default class RendererFactory {
         const cardMap: CardMap = {
             "bcinfo": this.bcInfo,
             "mininginfo": this.mining,
+            "accinfo": this.accinfo,
         };
         return cardMap;
 

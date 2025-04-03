@@ -54,12 +54,15 @@ export default class Socket {
             this.Open(this.port)
             return
         }
-        
-        const msg: C2SMsg = {
-            types: eventName,
-            params: [...params, this.token],
+        if (this.m_ws.readyState == WebSocket.OPEN) {
+            const msg: C2SMsg = {
+                types: eventName,
+                params: [...params, this.token],
+            }
+            this.m_ws.send(JSON.stringify(msg))
+        } else {
+            this.waitQ.push({ eventName: eventName, params: params })
         }
-        this.m_ws.send(JSON.stringify(msg))
     }
     SetSession(token: string) {
         this.token = token
