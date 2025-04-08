@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "bs58check": "^4.0.0",
+    "chalk": "^5.4.1",
     "chart.js": "^4.4.8",
     "classic-level": "^2.0.0",
     "electron": "^35.0.0",

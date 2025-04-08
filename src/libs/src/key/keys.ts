@@ -3,6 +3,7 @@ import { Level } from "level";
 import crypto from "crypto";
 import { ec as EC } from "elliptic"
 import bs58check from "bs58check"
+import { logger } from "@GBlibs/logger/logger";
 
 // ✅ 키 저장용 LevelDB
 const keyDB = new Level<string, string>("./key-db", { valueEncoding: "utf-8" });
@@ -21,7 +22,7 @@ export default class KeyManager {
       publicKeyEncoding: { format: "pem", type: "spki" },
     });
 
-    console.log("🔑 개인키 및 공개키 생성 완료");
+    logger.info("🔑 개인키 및 공개키 생성 완료");
     return { privateKey, publicKey };
   }
   /**
@@ -67,7 +68,7 @@ export default class KeyManager {
       decrypted += decipher.final("utf-8");
       return decrypted;
     } catch (error) {
-      console.error("❌ 잘못된 비밀번호! 개인키 복호화 실패");
+      logger.error("❌ 잘못된 비밀번호! 개인키 복호화 실패");
       return null;
     }
   }
@@ -75,11 +76,11 @@ export default class KeyManager {
   async putIfAbsent(key: string, value: string): Promise<boolean> {
     const existing = await keyDB.get(key);
     if (existing !== undefined && existing !== null) {
-      console.log(`⚠️ 키 '${key}'는 이미 존재합니다. 저장하지 않음.`);
+      logger.info(`⚠️ 키 '${key}'는 이미 존재합니다. 저장하지 않음.`);
       return false;
     }
     await keyDB.put(key, value);
-    console.log(`✅ 키 '${key}'가 존재하지 않아 저장되었습니다.`);
+    logger.info(`✅ 키 '${key}'가 존재하지 않아 저장되었습니다.`);
     return true;
   }
   /**
@@ -92,7 +93,7 @@ export default class KeyManager {
         const id = key.split(":")[0]
         const pubKey = this.pemToBitcoinAddress(value)
         result.push({ key: id, value: pubKey });
-        console.log(id, value)
+        logger.info(id, value)
       }
     }
     return result;
@@ -157,7 +158,7 @@ export default class KeyManager {
     if (!await this.putIfAbsent(`${id}:public`, publicKey)) {
       return false
     }
-    console.log(`✅ 키 저장 완료 (ID: ${id})`);
+    logger.info(`✅ 키 저장 완료 (ID: ${id})`);
   }
 
   /**
@@ -189,7 +190,7 @@ export default class KeyManager {
   async signData(id: string, data: string, password: string): Promise<string | null> {
     const privateKey = await this.getPrivateKey(id, password);
     if (!privateKey) {
-      console.error(`❌ 개인키 없음 또는 복호화 실패 (ID: ${id})`);
+      logger.error(`❌ 개인키 없음 또는 복호화 실패 (ID: ${id})`);
       return null;
     }
 
@@ -205,7 +206,7 @@ export default class KeyManager {
   async verifySignature(id: string, data: string, signature: string): Promise<boolean> {
     const publicKey = await this.getPublicKey(id);
     if (!publicKey) {
-      console.error(`❌ 공개키 없음 (ID: ${id})`);
+      logger.error(`❌ 공개키 없음 (ID: ${id})`);
       return false;
     }
 

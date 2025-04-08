@@ -1,3 +1,4 @@
+import { logger } from "@GBlibs/logger/logger";
 import Peer, { DataConnection } from "peerjs";
 import { v4 as uuidv4 } from "uuid"
 
@@ -45,12 +46,12 @@ export default class p2p {
     }
     Init() {
         this.peer.on('open', (id) => {
-            console.log(`My peer ID is: ${id}`);
+            logger.info(`My peer ID is: ${id}`);
         });
 
         // 새로 참가한 피어에게 기존 연결 정보 전달
         this.peer.on('connection', (conn: DataConnection) => {
-            console.log(`Incoming connection from ${conn.peer}`);
+            logger.info(`Incoming connection from ${conn.peer}`);
             this.connections[conn.peer] = conn;
 
             // 새로 접속한 피어에게 기존 피어 목록 전달
@@ -58,7 +59,7 @@ export default class p2p {
 
             conn.on('data', (data: unknown) => {
                 const receiveData = data as ReceivedData
-                console.log(`Received from ${conn.peer}:`, data);
+                logger.info(`Received from ${conn.peer}:`, data);
 
                 // 메시지를 모든 피어에게 브로드캐스트
                 if (receiveData.type === 'message') {
@@ -67,7 +68,7 @@ export default class p2p {
             });
 
             conn.on('close', () => {
-                console.log(`Connection with ${conn.peer} closed`);
+                logger.info(`Connection with ${conn.peer} closed`);
                 delete this.connections[conn.peer];
             });
         });
@@ -87,13 +88,13 @@ export default class p2p {
         if (!this.connections[peerId]) {
             const conn = this.peer.connect(peerId);
             conn.on('open', () => {
-                console.log(`Connected to ${peerId}`);
+                logger.info(`Connected to ${peerId}`);
                 this.connections[peerId] = conn;
             });
 
             conn.on('data', (data) => {
                 const receiveData = data as ReceivedData
-                console.log(`Received from ${peerId}:`, data);
+                logger.info(`Received from ${peerId}:`, data);
 
                 // 기존 피어 목록을 받으면 추가 연결
                 if (receiveData.type === 'peers') {
@@ -101,12 +102,12 @@ export default class p2p {
                         if (id !== this.peer.id) this.connectToPeer(id);
                     });
                 } else if (receiveData.type === 'message') {
-                    console.log(`Message from ${receiveData.sender}: ${receiveData.message}`);
+                    logger.info(`Message from ${receiveData.sender}: ${receiveData.message}`);
                 }
             });
 
             conn.on('close', () => {
-                console.log(`Connection with ${peerId} closed`);
+                logger.info(`Connection with ${peerId} closed`);
                 delete this.connections[peerId];
             });
         }

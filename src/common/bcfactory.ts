@@ -7,31 +7,33 @@ import PendingTransactionPool from "@GBlibs/txs/pendingtxs";
 import TransactionManager from "@GBlibs/txs/txs";
 import Blockchain from "./blockchain";
 import KeyManager from "@GBlibs/key/keys";
-import AppRoutes from "./router";
 import KeyMaker from "./keymaker";
-import SessionServer from "@GBlibs/webs/sessions/sessionserver";
+import { logger } from "@GBlibs/logger/logger";
 
 export default class BlockChainFactory {
     valid = new ValidatorManager()
     blocks = new BlockManager(this.valid)
     txs = new TransactionManager()
     pendingPool = new PendingTransactionPool()
-    keys = new KeyManager()
-    keyMaker = new KeyMaker(this.keys)
-    session = new SessionServer()
 
     /* Network */
-    dhtPeer = new DHTPeer(this.keyMaker.pubkey)
-    net = new GossipP2P(this.dhtPeer)
+    dhtPeer: DHTPeer
+    net:GossipP2P
 
-    pbftCons = new PBFTConsensus(this.valid, this.blocks, this.txs, this.net)
+    pbftCons: PBFTConsensus
+    blockChain:Blockchain
 
-    blockChain = new Blockchain(this.blocks, this.txs, this.pbftCons, this.net, 
-        this.pendingPool, this.keys)
+    constructor(
+        private keyMaker: KeyMaker, 
+        private keys: KeyManager,
+    ) {
+        /* Network */
+        this.dhtPeer = new DHTPeer(this.keyMaker.GetBase58PubKey())
+        this.net = new GossipP2P(this.dhtPeer)
 
-    route = new AppRoutes(this.keyMaker, this.session)
+        this.pbftCons = new PBFTConsensus(this.valid, this.blocks, this.txs, this.net)
 
-    constructor() {
-
+        this.blockChain = new Blockchain(this.blocks, this.txs, this.pbftCons, this.net,
+            this.pendingPool, this.keys)
     }
 }

@@ -1,5 +1,6 @@
 import { Level } from "level";
 import { Transaction } from "./txtypes";
+import { logger } from "@GBlibs/logger/logger";
 
 /**
  * ✅ Pending 트랜잭션을 관리하는 Pool
@@ -16,7 +17,7 @@ export default class PendingTransactionPool {
    */
   async addTransaction(transaction: Transaction): Promise<void> {
     await this.pendingDB.put(transaction.txid, transaction);
-    console.log(`📥 [PendingTransactionPool] 트랜잭션 추가: ${transaction.txid}`);
+    logger.info(`📥 [PendingTransactionPool] 트랜잭션 추가: ${transaction.txid}`);
   }
 
   /**
@@ -36,9 +37,9 @@ export default class PendingTransactionPool {
   async removeTransaction(txid: string): Promise<void> {
     try {
       await this.pendingDB.del(txid);
-      console.log(`🗑️ [PendingTransactionPool] 트랜잭션 제거: ${txid}`);
+      logger.info(`🗑️ [PendingTransactionPool] 트랜잭션 제거: ${txid}`);
     } catch (error) {
-      console.warn(`⚠️ [PendingTransactionPool] 트랜잭션 삭제 실패: ${txid}`);
+      logger.warn(`⚠️ [PendingTransactionPool] 트랜잭션 삭제 실패: ${txid}`);
     }
   }
 

@@ -1,6 +1,7 @@
 import { Level } from "level";
 import { createHash, createSign, createVerify } from "crypto";
 import { Transaction, UTXO } from "./txtypes";
+import { logger } from "@GBlibs/logger/logger";
 
 // UTXO 저장용 DB
 const utxoDB = new Level<string, UTXO>("./utxo-db", { valueEncoding: "json" });
@@ -12,7 +13,7 @@ export default class TransactionManager {
   async saveUTXO(utxo: UTXO): Promise<void> {
     const key = `${utxo.txid}:${utxo.index}`;
     await utxoDB.put(key, utxo);
-    console.log(`✅ UTXO 저장 완료: ${key}`);
+    logger.info(`✅ UTXO 저장 완료: ${key}`);
   }
 
   // ✅ UTXO 조회
@@ -30,9 +31,9 @@ export default class TransactionManager {
     const key = `${txid}:${index}`;
     try {
       await utxoDB.del(key);
-      console.log(`🗑️ UTXO 삭제 완료: ${key}`);
+      logger.info(`🗑️ UTXO 삭제 완료: ${key}`);
     } catch (error) {
-      console.error("UTXO 삭제 실패:", error);
+      logger.error("UTXO 삭제 실패:", error);
     }
   }
 
@@ -134,7 +135,7 @@ export default class TransactionManager {
   // ✅ 트랜잭션 저장
   async saveTransaction(tx: Transaction): Promise<void> {
     await txDB.put(tx.txid, tx);
-    console.log(`✅ 트랜잭션 저장 완료: ${tx.txid}`);
+    logger.info(`✅ 트랜잭션 저장 완료: ${tx.txid}`);
   }
 
   // ✅ 트랜잭션 조회 및 검증
@@ -142,7 +143,7 @@ export default class TransactionManager {
     try {
       const transaction = await txDB.get(txid);
       if (!this.verifyTransaction(transaction)) {
-        console.error(`❌ 트랜잭션 검증 실패: ${txid}`);
+        logger.error(`❌ 트랜잭션 검증 실패: ${txid}`);
         return null;
       }
       return transaction;

@@ -2,6 +2,7 @@ import Peer, { DataConnection } from "peerjs";
 import { v4 as uuidv4 } from "uuid"
 import { peerConfig } from "./peer";
 import { GPType, GPacket } from "./packet";
+import { logger } from "@GBlibs/logger/logger";
 
 /**
  * PeerJS 기반 DHT 네트워크
@@ -15,13 +16,13 @@ export default class DHTPeer {
     id = uuidv4()
 
     constructor(peerId?: string) {
-        const id = (peerId) ? peerId : this.id
+        const id = "GhostNet:" + ((peerId) ? peerId : this.id)
         this.peer = new Peer(id, { config: peerConfig });
         this.peers = new Map();
         this.keyValueStore = new Map();
         this.initHandler()
         this.setupPeerEvents();
-        console.log("node id = " + id)
+        logger.info("node id = " + id)
     }
 
     /**
@@ -30,25 +31,25 @@ export default class DHTPeer {
     private setupPeerEvents() {
     
         this.peer.on('open', (id) => {
-            console.log(`Peer ID: ${id}`);
+            logger.info(`Peer ID: ${id}`);
         });
 
         this.peer.on('connection', (conn) => {
-            console.log(`Connected to: ${conn.peer}`);
+            logger.info(`Connected to: ${conn.peer}`);
             this.peers.set(conn.peer, conn);
 
             conn.on('open', () => {
-                console.log(`🔗 PeerJS Connection Established with ${conn.peer}`);
+                logger.info(`🔗 PeerJS Connection Established with ${conn.peer}`);
 
                 // WebRTC 연결 상태 확인
                 conn.peerConnection.oniceconnectionstatechange = () => {
-                    console.log(`🔍 ICE Connection State: ${conn.peerConnection.iceConnectionState}`);
+                    logger.info(`🔍 ICE Connection State: ${conn.peerConnection.iceConnectionState}`);
                 };
             });
 
             conn.on('data', (data) => this.handleIncomingData(data as GPacket, conn));
             conn.on('close', () => {
-                console.log(`Disconnected from: ${conn.peer}`);
+                logger.info(`Disconnected from: ${conn.peer}`);
                 this.peers.delete(conn.peer);
             });
         });
@@ -62,13 +63,13 @@ export default class DHTPeer {
 
         const conn = this.peer.connect(peerId);
         conn.on('open', () => {
-            console.log(`Connected to ${peerId}`);
+            logger.info(`Connected to ${peerId}`);
             this.peers.set(peerId, conn);
         });
 
         conn.on('data', (data) => this.handleIncomingData(data as GPacket, conn));
         conn.on('close', () => {
-            console.log(`Disconnected from: ${peerId}`);
+            logger.info(`Disconnected from: ${peerId}`);
             this.peers.delete(peerId);
         });
     }
@@ -83,7 +84,7 @@ export default class DHTPeer {
         } else {
             // 직접 저장 (자신이 가장 가까운 노드일 경우)
             this.keyValueStore.set(key, value);
-            console.log(`Stored Locally - Key: ${key}, Value: ${value}`);
+            logger.info(`Stored Locally - Key: ${key}, Value: ${value}`);
         }
     }
 
@@ -92,7 +93,7 @@ export default class DHTPeer {
      */
     lookupData(key: string) {
         if (this.keyValueStore.has(key)) {
-            console.log(`Data Found Locally - Key: ${key}, Value: ${this.keyValueStore.get(key)}`);
+            logger.info(`Data Found Locally - Key: ${key}, Value: ${this.keyValueStore.get(key)}`);
             return this.keyValueStore.get(key);
         }
 
@@ -100,7 +101,7 @@ export default class DHTPeer {
         if (closestPeer) {
             this.peers.get(closestPeer)?.send({ type: 'lookup', key });
         } else {
-            console.log(`Data Not Found for Key: ${key}`);
+            logger.info(`Data Not Found for Key: ${key}`);
         }
     }
 
@@ -161,14 +162,14 @@ export default class DHTPeer {
             }
         }
         this.handler[GPType.DHTLookupCq] = (data: GPacket, conn: DataConnection) => {
-            console.log(`Lookup Response - Key: ${data.key}, Value: ${data.value}`);
+            logger.info(`Lookup Response - Key: ${data.key}, Value: ${data.value}`);
             this.clients[GPType.DHTLookupCq].forEach((c) => {
                 c(data, conn)
             })
         }
         this.handler[GPType.DHTStoreSq] = (data: GPacket, conn: DataConnection) => {
             this.keyValueStore.set(data.key, data.value);
-            console.log(`Received and Stored - Key: ${data.key}, Value: ${data.value}`);
+            logger.info(`Received and Stored - Key: ${data.key}, Value: ${data.value}`);
         }
     }
 }

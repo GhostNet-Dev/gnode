@@ -1,11 +1,10 @@
-import BlockChainFactory from '@Commons/bfactory';
+import BootFactory from '@Commons/bootfactory';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { RouteType } from 'src/types/routetypes';
-import { stringToBytes } from 'uuid/dist/cjs/v35';
 
 let mainWindow: BrowserWindow | null = null;
-const factory = new BlockChainFactory()
+const factory = new BootFactory()
 
 app.on('ready', () => {
     mainWindow = new BrowserWindow({

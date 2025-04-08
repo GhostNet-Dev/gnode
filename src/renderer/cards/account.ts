@@ -4,7 +4,7 @@ import { IPage } from "@GBlibs/webs/views/page";
 
 export default class AccountInfo extends Card implements IPage {
     constructor(private ch: IChannel) {
-        super("html/account.html", "account", "My Account")
+        super("html/account.html", "accinfo", "My Account")
     }
     Release(): void {
     }

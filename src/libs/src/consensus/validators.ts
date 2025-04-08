@@ -1,3 +1,4 @@
+import { logger } from "@GBlibs/logger/logger";
 import { Level } from "level";
 
 // ✅ Validator 저장용 LevelDB
@@ -42,7 +43,7 @@ export default class ValidatorManager {
         if (!this.validators.includes(newValidator)) {
             this.validators.push(newValidator);
             await this.saveValidators();
-            console.log(`✅ Validator 추가됨: ${newValidator}`);
+            logger.info(`✅ Validator 추가됨: ${newValidator}`);
         }
     }
 
@@ -50,7 +51,7 @@ export default class ValidatorManager {
     async removeValidator(validator: string): Promise<void> {
         this.validators = this.validators.filter(v => v !== validator);
         await this.saveValidators();
-        console.log(`❌ Validator 삭제됨: ${validator}`);
+        logger.info(`❌ Validator 삭제됨: ${validator}`);
     }
 
     // -------------------------------------------------------------------
@@ -63,7 +64,7 @@ export default class ValidatorManager {
         if (!votes.includes(validator)) {
             votes.push(validator);
             await voteDB.put(blockHash, votes);
-            console.log(`✅ ${validator}가 블록(${blockHash})에 투표함.`);
+            logger.info(`✅ ${validator}가 블록(${blockHash})에 투표함.`);
         }
     }
 

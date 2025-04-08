@@ -1,3 +1,4 @@
+import { logger } from "@GBlibs/logger/logger";
 import { NetworkInterface } from "@GBlibs/network/inetwork";
 
 export default class PBFTViewChange {
@@ -24,12 +25,12 @@ export default class PBFTViewChange {
       this.timeoutCount[node] = 0;
     }
 
-    console.log(`🔵 [PBFT View Change 시작] Primary 노드: ${this.primaryNode}, View Number: ${this.viewNumber}`);
+    logger.info(`🔵 [PBFT View Change 시작] Primary 노드: ${this.primaryNode}, View Number: ${this.viewNumber}`);
   }
 
   // ✅ View Change 요청을 보냄
   async requestViewChange(): Promise<string | null> {
-    console.log("⚠️ [View Change] View Change 요청 중...");
+    logger.info("⚠️ [View Change] View Change 요청 중...");
 
     return new Promise((resolve) => {
       let viewChangeCount = 0;
@@ -37,7 +38,7 @@ export default class PBFTViewChange {
 
       this.pbftNetwork.on("VIEW-CHANGE-ACK", () => {
         viewChangeCount++;
-        console.log(`✅ [View Change] 노드 동의 수: ${viewChangeCount}`);
+        logger.info(`✅ [View Change] 노드 동의 수: ${viewChangeCount}`);
 
         // ✅ 2/3 이상의 노드가 View Change를 승인하면 새로운 Primary 선정
         if (viewChangeCount >= Math.ceil((2 / 3) * this.nodes.length)) {
@@ -48,7 +49,7 @@ export default class PBFTViewChange {
 
       // Timeout 설정
       setTimeout(() => {
-        console.log("❌ [View Change 실패] 충분한 동의를 받지 못함!");
+        logger.info("❌ [View Change 실패] 충분한 동의를 받지 못함!");
         resolve(null);
       }, 5000);
     });
@@ -58,7 +59,7 @@ export default class PBFTViewChange {
   selectNewPrimary(): string {
     this.viewNumber++;
     const newPrimary = this.nodes[this.viewNumber % this.nodes.length];
-    console.log(`🔄 [View Change 성공] 새로운 Primary 노드: ${newPrimary}`);
+    logger.info(`🔄 [View Change 성공] 새로운 Primary 노드: ${newPrimary}`);
     return newPrimary;
   }
 }

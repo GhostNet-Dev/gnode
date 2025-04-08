@@ -5,14 +5,16 @@ import fs from 'fs'
 import { readFile } from 'fs';
 import { join } from 'path';
 import { Mime } from "mime"
-import BlockChainFactory from '@Commons/bfactory';
+import BlockChainFactory from '@Commons/bcfactory';
 import { C2SMsg, Handler } from '@Commons/icom';
 import { RouteType } from "../types/routetypes"
+import BootFactory from '@Commons/bootfactory';
+import { logger } from '@GBlibs/logger/logger';
 const WebSocketServer = require('ws');
 
 export const PORT = 3000;
 const mime = new Mime()
-const factory = new BlockChainFactory()
+const factory = new BootFactory()
 
 // 정적 파일 서비스 (index.html)
 const server = createServer((req, res) => {
@@ -23,7 +25,7 @@ const server = createServer((req, res) => {
             if (err) {
                 res.writeHead(500, { 'Content-Type': 'text/plain' });
                 res.end('Internal Server Error');
-                console.log(err)
+                logger.info(err)
             } else {
                 res.writeHead(200, { 'Content-Type': 'text/html' });
                 res.end(data);
@@ -49,7 +51,7 @@ const server = createServer((req, res) => {
             res.writeHead(200)
             res.end(file)
         } catch (err) {
-            console.log(err)
+            logger.info(err)
             res.writeHead(404, { 'Content-Type': 'text/plain' });
             res.end('Not Found');
         }
@@ -57,7 +59,7 @@ const server = createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-    console.log(`✅ Web Server running at http://localhost:${PORT}/`);
+    logger.info(`✅ Web Server running at http://localhost:${PORT}/`);
 });
 
 
@@ -77,25 +79,33 @@ const g_handler: Handler = {
     },
     [RouteType.LoginReq]: async (ws: any, id: string, pass: string) => {
         const ret = await factory.route.Login(id, pass)
-        console.log(id, pass, ret)
+        logger.info(id, pass, ret)
         ws.send(JSON.stringify({ types: RouteType.LoginRes, params: ret }));
     },
     [RouteType.SessionCheckReq]: async (ws: any, token: string) => {
         const ret = await factory.route.SessionCheck(token)
         ws.send(JSON.stringify({ types: RouteType.SessionCheckRes, params: ret }));
     },
+    [RouteType.BlockInfoReq]: async (ws: any) => {
+        const ret = await factory.route.GetBlockInfo()
+        ws.send(JSON.stringify({ types: RouteType.BlockInfoRes, params: ret }));
+    },
+    [RouteType.BlockListReq]: async (ws: any, height: number, count: number) => {
+        const ret = await factory.route.GetBlockList(height, count)
+        ws.send(JSON.stringify({ types: RouteType.BlockListRes, params: ret }));
+    },
 }
 wss.on("connection", (ws: any) => {
-    console.log("connect");
+    logger.info("connect");
     ws.on("message", (data: any) => {
         const msg: C2SMsg = JSON.parse(data);
         g_handler[msg.types](ws, ...msg.params);
     });
     ws.on("close", () => {
-        console.log("disconnect");
+        logger.info("disconnect");
     });
     ws.onerror = function () {
-        console.log("error occurred");
+        logger.info("error occurred");
     }
 });
 

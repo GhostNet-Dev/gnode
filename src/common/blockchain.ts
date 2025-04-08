@@ -3,6 +3,7 @@ import { Block } from "@GBlibs/blocks/blocktypes";
 import PBFTConsensus from "@GBlibs/consensus/pbftconsensus";
 import ValidatorManager from "@GBlibs/consensus/validators";
 import KeyManager from "@GBlibs/key/keys";
+import { logger } from "@GBlibs/logger/logger";
 import { NetworkInterface } from "@GBlibs/network/inetwork";
 import PendingTransactionPool from "@GBlibs/txs/pendingtxs";
 import TransactionManager from "@GBlibs/txs/txs";
@@ -35,7 +36,7 @@ export default class Blockchain {
     this.pendingPool = pendingPool;
     this.keyManager = keyManager;
 
-    console.log("✅ Blockchain 시스템 초기화 완료");
+    logger.info("✅ Blockchain 시스템 초기화 완료");
 
     // 블록체인 네트워크 이벤트 리스너 설정
     this.setupNetworkListeners();
@@ -46,12 +47,12 @@ export default class Blockchain {
    */
   private setupNetworkListeners() {
     this.network.on("transaction", (transaction) => {
-      console.log(`📥 [Blockchain] 트랜잭션 수신: ${JSON.stringify(transaction)}`);
+      logger.info(`📥 [Blockchain] 트랜잭션 수신: ${JSON.stringify(transaction)}`);
       this.processTransaction(transaction);
     });
 
     this.network.on("block", (block) => {
-      console.log(`📥 [Blockchain] 블록 수신: ${block.index}`);
+      logger.info(`📥 [Blockchain] 블록 수신: ${block.index}`);
       this.processBlock(block);
     });
   }
@@ -60,7 +61,7 @@ export default class Blockchain {
    * ✅ 트랜잭션 생성 및 네트워크 전파
    */
   async createTransaction(senderPrivateKey:string, senderPubKey: string, sender: string, recipient: string, amount: number, mediator: string) {
-    console.log(`📝 [Blockchain] 트랜잭션 생성: ${sender} → ${recipient} (${amount} 코인)`);
+    logger.info(`📝 [Blockchain] 트랜잭션 생성: ${sender} → ${recipient} (${amount} 코인)`);
     
     const transaction = await this.txManager.createTransaction(senderPrivateKey, senderPubKey, sender, recipient, amount, mediator);
     await this.pendingPool.addTransaction(transaction);
@@ -71,16 +72,16 @@ export default class Blockchain {
    * ✅ 네트워크에서 받은 트랜잭션 처리 (검증 후 Pending Pool에 추가)
    */
   private async processTransaction(transaction: Transaction) {
-    console.log(`🔍 [Blockchain] 트랜잭션 검증 중: ${transaction.txid}`);
+    logger.info(`🔍 [Blockchain] 트랜잭션 검증 중: ${transaction.txid}`);
 
     const isValid = await this.keyManager.verifySignature(transaction.senderPublicKey, transaction.txid, transaction.signature);
     if (!isValid) {
-      console.log(`❌ [Blockchain] 트랜잭션 무효 (서명 검증 실패): ${transaction.txid}`);
+      logger.info(`❌ [Blockchain] 트랜잭션 무효 (서명 검증 실패): ${transaction.txid}`);
       return;
     }
 
     await this.pendingPool.addTransaction(transaction);
-    console.log(`✅ [Blockchain] 트랜잭션 저장 완료: ${transaction.txid}`);
+    logger.info(`✅ [Blockchain] 트랜잭션 저장 완료: ${transaction.txid}`);
   }
 
   /**
@@ -103,7 +104,7 @@ export default class Blockchain {
     const adjustmentFactor = Math.max(0.1, Math.min(2, speedRatio)); // 조정값을 0.1 ~ 2 사이로 제한
     this.minTxPerBlock = Math.max(1, Math.floor(this.minTxPerBlock * adjustmentFactor));
 
-    console.log(`🔄 [Blockchain] 블록 생성 속도 조정 완료: 최소 트랜잭션 개수 = ${this.minTxPerBlock}`);
+    logger.info(`🔄 [Blockchain] 블록 생성 속도 조정 완료: 최소 트랜잭션 개수 = ${this.minTxPerBlock}`);
   }
 
 
@@ -111,11 +112,11 @@ export default class Blockchain {
    * ✅ 블록 생성 및 PBFT 합의 요청
    */
   async createBlock() {
-    console.log("🔵 [Blockchain] 새로운 블록 생성 요청");
+    logger.info("🔵 [Blockchain] 새로운 블록 생성 요청");
     
     const transactions = await this.pendingPool.getAllTransactions();
     if (transactions.length < this.minTxPerBlock) {
-      console.log(`⚠️ [Blockchain] 트랜잭션 부족 (최소 필요: ${this.minTxPerBlock})`);
+      logger.info(`⚠️ [Blockchain] 트랜잭션 부족 (최소 필요: ${this.minTxPerBlock})`);
       return;
     }
 
@@ -127,22 +128,22 @@ export default class Blockchain {
    * ✅ 네트워크에서 받은 블록 처리 및 체인 리오그 실행
    */
   private async processBlock(newBlock: Block) {
-    console.log(`✅ [Blockchain] 블록 검증 중: ${newBlock.index}`);
+    logger.info(`✅ [Blockchain] 블록 검증 중: ${newBlock.index}`);
 
     const latestBlock = await this.blockManager.getLatestBlock();
     if (latestBlock != null && !(await this.blockManager.isValidBlock(newBlock, latestBlock, this.txManager))) {
-      console.log(`❌ [Blockchain] 블록 검증 실패: ${newBlock.index}`);
+      logger.info(`❌ [Blockchain] 블록 검증 실패: ${newBlock.index}`);
       return;
     }
 
     if (newBlock.transactions.length < this.minTxPerBlock) {
-      console.log(`❌ [Blockchain] 블록 무효: 트랜잭션 개수 부족 (${newBlock.transactions.length} < ${this.minTxPerBlock})`);
+      logger.info(`❌ [Blockchain] 블록 무효: 트랜잭션 개수 부족 (${newBlock.transactions.length} < ${this.minTxPerBlock})`);
       return;
     }
 
     await this.blockManager.saveBlock(newBlock);
     await this.pendingPool.clearTransactions(newBlock.transactions.map(tx => tx.txid));
-    console.log(`✅ [Blockchain] 블록 저장 완료: ${newBlock.index}`);
+    logger.info(`✅ [Blockchain] 블록 저장 완료: ${newBlock.index}`);
 
     this.adjustMinTxPerBlock();
   }
@@ -151,7 +152,7 @@ export default class Blockchain {
    * ✅ 블록체인 상태 출력
    */
   printBlockchain() {
-    console.log("📜 [Blockchain] 현재 블록체인 상태:");
+    logger.info("📜 [Blockchain] 현재 블록체인 상태:");
     console.table(this.blockManager.getBlockchain());
   }
 }

@@ -4,15 +4,22 @@ import { Level } from "level";
 import crypto from "crypto";
 import TransactionManager from "@GBlibs/txs/txs";
 import ValidatorManager from "@GBlibs/consensus/validators";
+import { logger } from "@GBlibs/logger/logger";
 
 // 블록 저장용 DB
 const blockDB = new Level<string, Block>("./block-db", { valueEncoding: "json" });
 
 export default class BlockManager {
-  private blockchain: Block[] = [];
 
   constructor(private validatorMgr: ValidatorManager) {
-    this.blockchain.push(this.createGenesisBlock());
+    this.initialize()
+   }
+
+  async initialize() {
+    const blk = await this.getLatestBlock()
+    if(!blk) {
+      this.saveBlock(this.createGenesisBlock())
+    }
   }
 
   // ✅ 제네시스 블록 생성
@@ -29,14 +36,21 @@ export default class BlockManager {
   }
 
   // ✅ 체인 내 마지막 블록 반환
-  getLatestBlock(): Block {
-    return this.blockchain[this.blockchain.length - 1];
+  async getLatestBlock() {
+    try {
+      const block = await blockDB.get("latest");
+      return block;
+    } catch {
+      return undefined
+    }
   }
 
   // ✅ 블록 생성 (Coinbase 보상 추가)
   async createBlock(transactions: Transaction[], validator: string, txManager: TransactionManager): Promise<Block> {
-    const previousBlock = this.getLatestBlock();
+    const previousBlock = await this.getLatestBlock();
     const validators = await this.validatorMgr.getValidators();
+
+    if(!previousBlock) throw new Error("there is no block")
 
     // 🔄 중계자(Mediator) 목록 추출 및 보상 분배
     const mediatorRewards = this.calculateMediatorRewards(transactions);
@@ -118,11 +132,11 @@ export default class BlockManager {
       if (Math.random() > 0.2) approvals++; // 80% 승인 확률
     }
     if (approvals >= (2 / 3) * validators.length) {
-      this.blockchain.push(block);
-      console.log("✅ 블록 합의 완료:", block);
+      this.saveBlock(block);
+      logger.info("✅ 블록 합의 완료:", block);
       return true;
     } else {
-      console.log("❌ 블록 합의 실패");
+      logger.info("❌ 블록 합의 실패");
       return false;
     }
   }
@@ -130,17 +144,17 @@ export default class BlockManager {
   // ✅ 블록 검증 (UTXO 검증 및 Coinbase 검증 포함)
   async isValidBlock(newBlock: Block, previousBlock: Block, txManager: TransactionManager): Promise<boolean> {
     if (newBlock.previousHash !== previousBlock.hash) {
-      console.error("❌ 오류: 이전 해시 불일치");
+      logger.error("❌ 오류: 이전 해시 불일치");
       return false;
     }
     if (newBlock.hash !== this.calculateHash(newBlock)) {
-      console.error("❌ 오류: 블록 해시 불일치");
+      logger.error("❌ 오류: 블록 해시 불일치");
       return false;
     }
 
     const coinbaseTx = newBlock.transactions[0];
     if (!this.isValidCoinbase(coinbaseTx, newBlock.transactions.slice(1))) {
-      console.error("❌ 오류: Coinbase 배분 검증 실패");
+      logger.error("❌ 오류: Coinbase 배분 검증 실패");
       return false;
     }
 
@@ -148,7 +162,7 @@ export default class BlockManager {
       for (const input of tx.inputs) {
         const utxo = await txManager.getUTXO(input.txid, input.index);
         if (!utxo) {
-          console.error(`❌ 오류: UTXO ${input.txid}:${input.index} 없음`);
+          logger.error(`❌ 오류: UTXO ${input.txid}:${input.index} 없음`);
           return false;
         }
       }
@@ -162,14 +176,14 @@ export default class BlockManager {
     const totalReward = coinbaseTx.outputs.reduce((sum, output) => sum + output.amount, 0);
 
     if (totalReward !== 1000) {
-      console.error(`❌ 오류: Coinbase 총 보상액 불일치 (기대값: 1000, 실제: ${totalReward})`);
+      logger.error(`❌ 오류: Coinbase 총 보상액 불일치 (기대값: 1000, 실제: ${totalReward})`);
       return false;
     }
 
     for (const output of coinbaseTx.outputs) {
       const expectedReward = expectedRewards.find(r => r.mediator === output.owner);
       if (!expectedReward || expectedReward.amount !== output.amount) {
-        console.error(`❌ 오류: Coinbase 분배 불일치 (${output.owner}: ${output.amount})`);
+        logger.error(`❌ 오류: Coinbase 분배 불일치 (${output.owner}: ${output.amount})`);
         return false;
       }
     }
@@ -180,7 +194,7 @@ export default class BlockManager {
   async saveBlock(block: Block): Promise<void> {
     await blockDB.put("latest", block);
     await blockDB.put(block.index.toString(), block);
-    console.log(`✅ 블록 저장 완료: ${block.index}`);
+    logger.info(`✅ 블록 저장 완료: ${block.index}`);
   }
 
   async getLatestBlockIndex(): Promise<number> {

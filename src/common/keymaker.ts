@@ -1,11 +1,17 @@
 import KeyManager from "@GBlibs/key/keys";
+import { logger } from "@GBlibs/logger/logger";
 
 export default class KeyMaker {
     id?: string
     pass?: string
     pubkey?: string
     privKey?: string
-    constructor(private kmgr: KeyManager) {
+    constructor(public kmgr: KeyManager) {
+    }
+    GetBase58PubKey() {
+        if(!this.pubkey) throw new Error("there is no pubkey");
+        
+        return this.kmgr.pemToBitcoinAddress(this.pubkey) 
     }
     
     async Login(id: string, pass: string) {
@@ -14,7 +20,10 @@ export default class KeyMaker {
         if (privKey == null) return false
 
         const newPub = this.kmgr.derivePublicKeyFromPrivateKey(privKey)
-        if(newPub === pubKey) return true
+        if(newPub === pubKey) {
+            this.pubkey = pubKey
+            return true
+        }
 
         return false
     }
@@ -40,7 +49,7 @@ export default class KeyMaker {
             this.pubkey = pubKey
             this.privKey = privKey
         } catch (error) {
-            console.log(error)
+            logger.info(error)
             return false
         }
         return true
