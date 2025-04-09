@@ -1,6 +1,6 @@
 import { IChannel } from "@Commons/icom";
-import Card from "@GBlibs/webs/views/card";
-import { IPage } from "@GBlibs/webs/views/page";
+import Card from "@Webs/views/card";
+import { IPage } from "@Webs/views/page";
 
 export default class AccountInfo extends Card implements IPage {
     constructor(private ch: IChannel) {

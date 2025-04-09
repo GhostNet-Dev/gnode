@@ -7,7 +7,7 @@ if (typeof window !== "undefined" && (window as any).process?.type) {
     Channel = eval('require')("../main/ipc").default;
 } else {
     // Web 환경
-    const mode = require("../libs/src/webs/network/wsocket");
+    const mode = require("@Webs/network/wsocket");
     Channel = mode.default
 }
 

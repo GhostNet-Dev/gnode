@@ -1,5 +1,5 @@
-import Sessions from "@GBlibs/webs/sessions/session";
-import Page, { IPage } from "@GBlibs/webs/views/page";
+import Sessions from "src/wlibs/src/sessions/session";
+import Page, { IPage } from "@Webs/views/page";
 
 export default class LogoutPage extends Page implements IPage {
     constructor(private sess: Sessions) {

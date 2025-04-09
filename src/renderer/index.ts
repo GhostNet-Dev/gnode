@@ -1,5 +1,5 @@
 import RendererFactory from "./factory";
-import { Base } from "@GBlibs/webs/views/base";
+import { Base } from "@Webs/views/base";
 
 const fab = new RendererFactory()
 

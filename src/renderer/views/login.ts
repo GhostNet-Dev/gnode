@@ -1,8 +1,8 @@
 import { IChannel } from "@Commons/icom";
-import Page, { IPage } from "@GBlibs/webs/views/page";
+import Page, { IPage } from "@Webs/views/page";
 import { sha256 } from "js-sha256";
 import { RouteType } from "../../types/routetypes";
-import Sessions from "@GBlibs/webs/sessions/session";
+import Sessions from "src/wlibs/src/sessions/session";
 
 export default class LoginPage extends Page implements IPage {
   id = ""

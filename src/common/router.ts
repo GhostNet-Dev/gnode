@@ -1,9 +1,8 @@
-import SessionServer from "@GBlibs/webs/sessions/sessionserver";
+import SessionServer from "@Webs/sessions/sessionserver";
 import { BlockInfo } from "@GBlibs/types/blockinfotypes";
 import KeyMaker from "./keymaker";
 import crypto from "crypto"
 import BlockChainFactory from "./bcfactory";
-import { Block } from "@GBlibs/blocks/blocktypes";
 
 export default class AppRoutes {
     secret = ""

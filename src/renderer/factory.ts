@@ -1,12 +1,12 @@
 import { IChannel } from "@Commons/icom";
 import { Channel } from "./provider";
-import { CardMap, FuncMap } from "@GBlibs/webs/models/type";
+import { CardMap, FuncMap } from "@Webs/models/type";
 import BcInfo from "./cards/bcinfo";
 import Mining from "./cards/mining";
 import DashboardPage from "./views/dashboard";
 import LoginPage from "./views/login";
 import MakeAccountPage from "./views/makeaccount";
-import Sessions from "@GBlibs/webs/sessions/session";
+import Sessions from "@Webs/sessions/session";
 import LogoutPage from "./views/logout";
 import AccountInfo from "./cards/account";
 

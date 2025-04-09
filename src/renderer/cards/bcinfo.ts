@@ -1,8 +1,8 @@
 import { IChannel } from "@Commons/icom";
 import { Block } from "@GBlibs/blocks/blocktypes";
 import { BlockInfo } from "@GBlibs/types/blockinfotypes";
-import Card from "@GBlibs/webs/views/card";
-import { IPage } from "@GBlibs/webs/views/page";
+import Card from "@Webs/views/card";
+import { IPage } from "@Webs/views/page";
 import { RouteType } from "../../types/routetypes";
 
 export default class BcInfo extends Card implements IPage {

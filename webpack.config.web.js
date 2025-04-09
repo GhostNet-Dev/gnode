@@ -6,6 +6,7 @@ const g_resolve = {
         "@Models": path.resolve(__dirname, "src/models"),
         "@Glibs": path.resolve(__dirname, "src/gsdk/src"),
         "@GBlibs": path.resolve(__dirname, "src/libs/src"),
+        "@Webs": path.resolve(__dirname, "src/wlibs/src"),
     }
 }
 const g_module = {

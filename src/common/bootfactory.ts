@@ -1,7 +1,7 @@
 import KeyManager from "@GBlibs/key/keys";
 import AppRoutes from "./router";
 import KeyMaker from "./keymaker";
-import SessionServer from "@GBlibs/webs/sessions/sessionserver";
+import SessionServer from "@Webs/sessions/sessionserver";
 
 
 export default class BootFactory {

@@ -1,6 +1,6 @@
-import { CardMap } from "@GBlibs/webs/models/type";
-import Card from "@GBlibs/webs/views/card";
-import Page, { IPage } from "@GBlibs/webs/views/page";
+import { CardMap } from "src/wlibs/src/models/type";
+import Card from "@Webs/views/card";
+import Page, { IPage } from "@Webs/views/page";
 
 
 export default class DashboardPage extends Page implements IPage {

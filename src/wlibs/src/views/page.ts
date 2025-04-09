@@ -1,4 +1,4 @@
-import { CardMap } from "../models/type"
+import { CardMap } from "@Webs/models/type"
 
 export interface IPage {
     Run(): Promise<boolean>

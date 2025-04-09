@@ -1,5 +1,5 @@
 import { IChannel } from "@Commons/icom";
-import Page, { IPage } from "@GBlibs/webs/views/page";
+import Page, { IPage } from "@Webs/views/page";
 import { RouteType } from "../../types/routetypes";
 import { sha256 } from "js-sha256";
 

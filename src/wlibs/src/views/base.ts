@@ -1,4 +1,4 @@
-import { FuncMap } from "../models/type"
+import { FuncMap } from "@Webs/models/type"
 import { IPage } from "./page"
 
 export class Base {

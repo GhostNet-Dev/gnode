@@ -11,6 +11,7 @@
       "@Models/*": [ "src/models/*" ],
       "@Glibs/*": [ "src/gsdk/src/*" ],
       "@GBlibs/*": [ "src/libs/src/*" ],
+      "@Webs/*": [ "src/wlibs/src/*" ],
     },
   },
   "include": [
