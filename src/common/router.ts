@@ -3,6 +3,8 @@ import { BlockInfo } from "@GBlibs/types/blockinfotypes";
 import KeyMaker from "./keymaker";
 import crypto from "crypto"
 import BlockChainFactory from "./bcfactory";
+import { AccountData } from "src/types/infotypes";
+import { logger } from "@GBlibs/logger/logger";
 
 export default class AppRoutes {
     secret = ""
@@ -58,5 +60,37 @@ export default class AppRoutes {
         )
 
         return ret
+    }
+    async GetAccountInfo(token: string) {
+        const ret = this.session.verifyToken(token, this.secret)
+        logger.info(ret, this.keyMaker.id)
+        if(ret != null && this.keyMaker.id == ret) {
+            const data: AccountData = {
+                addr: this.keyMaker.GetBase58PubKey(),
+                coins: 0, // TODO
+            }
+            return data
+        }
+        return undefined
+    }
+    async GetBlock(year: number, month: number, day: number) {
+        if(!this.bcFab) return
+        const ret = await this.bcFab.blockState.getBlocksForDateGrouped(year, month, day)
+        if(Object.keys(ret).length == 0)  {
+            const timeKey = `${year}-${month}-${day}`;
+            ret[timeKey] = []
+        }
+        return ret
+    }
+    async GetPeers() { 
+        if(!this.bcFab) return []
+        let peerAddr:string[] = []
+        this.bcFab.dhtPeer.peers.forEach((_, key) => {
+            peerAddr.push(key)
+        })
+        return peerAddr
+    }
+    GetLogs() {
+        return logger.getBuffer()
     }
 }

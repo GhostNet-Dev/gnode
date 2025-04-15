@@ -22,6 +22,9 @@ export default class KeyMaker {
         const newPub = this.kmgr.derivePublicKeyFromPrivateKey(privKey)
         if(newPub === pubKey) {
             this.pubkey = pubKey
+            this.id = id
+            this.pass = pass
+            this.privKey = privKey
             return true
         }
 

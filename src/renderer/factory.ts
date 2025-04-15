@@ -9,6 +9,8 @@ import MakeAccountPage from "./views/makeaccount";
 import Sessions from "@Webs/sessions/session";
 import LogoutPage from "./views/logout";
 import AccountInfo from "./cards/account";
+import NetInfo from "./cards/netinfo";
+import LogCard from "./cards/logs";
 
 declare global {
     interface Window {
@@ -21,8 +23,10 @@ export default class RendererFactory {
     channel: IChannel = new Channel(3001)
     session = new Sessions()
     bcInfo = new BcInfo(this.channel)
-    accinfo = new AccountInfo(this.channel)
-    mining = new Mining(this.channel)
+    accinfo = new AccountInfo(this.channel, this.session)
+    mining = new Mining(this.channel, this.session)
+    netinfo = new NetInfo(this.channel, this.session)
+    loginfo = new LogCard(this.channel, this.session)
     login = new LoginPage(this.channel, this.session)
     logout = new LogoutPage(this.session)
     makeAcc = new MakeAccountPage(this.channel)
@@ -48,6 +52,8 @@ export default class RendererFactory {
             "bcinfo": this.bcInfo,
             "mininginfo": this.mining,
             "accinfo": this.accinfo,
+            "netinfo": this.netinfo,
+            "loginfo": this.loginfo,
         };
         return cardMap;
 

@@ -94,12 +94,33 @@ const g_handler: Handler = {
         const ret = await factory.route.GetBlockList(height, count)
         ws.send(JSON.stringify({ types: RouteType.BlockListRes, params: ret }));
     },
+    [RouteType.AccountInfoReq]: async (ws: any, token: string) => {
+        const ret = await factory.route.GetAccountInfo(token)
+        ws.send(JSON.stringify({ types: RouteType.AccountInfoRes, params: ret }));
+    },
+    [RouteType.GetBlockReq]: async (ws: any, year:number, month:number, day:number) => {
+        const ret = await factory.route.GetBlock(year, month, day)
+        ws.send(JSON.stringify({ types: RouteType.GetBlockRes, params: ret }));
+    },
+    [RouteType.GetPeersReq]: async (ws: any, year:number, month:number, day:number) => {
+        const ret = await factory.route.GetPeers()
+        ws.send(JSON.stringify({ types: RouteType.GetPeersRes, params: ret }));
+    },
+    [RouteType.GetLogsReq]: async (ws: any, year:number, month:number, day:number) => {
+        const ret = await factory.route.GetLogs()
+        ws.send(JSON.stringify({ types: RouteType.GetLogsRes, params: ret }));
+    },
 }
 wss.on("connection", (ws: any) => {
     logger.info("connect");
     ws.on("message", (data: any) => {
         const msg: C2SMsg = JSON.parse(data);
-        g_handler[msg.types](ws, ...msg.params);
+        const h = g_handler[msg.types]
+        if (!h) {
+            logger.error("no handler", msg.types)
+            return
+        }
+        h(ws, ...msg.params);
     });
     ws.on("close", () => {
         logger.info("disconnect");

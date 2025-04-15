@@ -7,7 +7,8 @@ import ValidatorManager from "@GBlibs/consensus/validators";
 import { logger } from "@GBlibs/logger/logger";
 
 // 블록 저장용 DB
-const blockDB = new Level<string, Block>("./block-db", { valueEncoding: "json" });
+export const blockDB = new Level<string, Block>("./block-db", { valueEncoding: "json" });
+
 
 export default class BlockManager {
 
@@ -16,6 +17,9 @@ export default class BlockManager {
    }
 
   async initialize() {
+    if (blockDB.status !== "open") {
+      blockDB.open();
+    }
     const blk = await this.getLatestBlock()
     if(!blk) {
       this.saveBlock(this.createGenesisBlock())

@@ -1,18 +1,42 @@
-// logger.ts
-import chalk from 'chalk'; // npm install chalk
+import chalk from 'chalk';
+
+export type LogBuffer  = {
+  time: Date;
+  level: string;
+  location: string;
+  message: string;
+}
 
 type LogLevel = 'info' | 'warn' | 'error';
+
+const MAX_BUFFER_SIZE = 500;
+const logBuffer: LogBuffer[] = [];
 
 function getCallerLocation(): string {
   const stack = new Error().stack?.split('\n') || [];
 
-  for (let i = 2; i < stack.length; i++) {
+  for (let i = 1; i < stack.length; i++) {
     const line = stack[i];
-    if (!line.includes('logger.') && !line.includes('getCallerLocation')) {
-      const match = line.match(/\((.*)\)/);
-      return match ? match[1] : line.trim();
+
+    if (
+      line.includes('getCallerLocation') ||
+      line.includes('formatMessage') ||
+      line.includes('logger.')
+    ) {
+      continue;
+    }
+
+    const match = line.match(/\((.*)\)/);
+    if (match && match[1]) {
+      return match[1].replace(process.cwd(), '.');
+    }
+
+    const inlineMatch = line.match(/at (.*)/);
+    if (inlineMatch && inlineMatch[1]) {
+      return inlineMatch[1].replace(process.cwd(), '.');
     }
   }
+
   return 'unknown';
 }
 
@@ -36,9 +60,41 @@ function formatMessage(level: LogLevel, message: any[]): string {
   return `${chalk.gray(time)} [${levelLabel}] (${chalk.cyan(location)}): ${message.join(' ')}`;
 }
 
+function rawMessage(level: LogLevel, message: any[]) {
+  const location = getCallerLocation();
+  const logbuf: LogBuffer = {
+    time: new Date(),
+    level, location, message: message.join(' ')
+  }
+  return logbuf
+}
+
+function storeLog(msg: LogBuffer) {
+  logBuffer.push(msg);
+  if (logBuffer.length > MAX_BUFFER_SIZE) {
+    logBuffer.shift(); // FIFO - 오래된 로그 제거
+  }
+}
+
 export const logger = {
-  info: (...args: any[]) => console.log(formatMessage('info', args)),
-  warn: (...args: any[]) => console.warn(formatMessage('warn', args)),
-  error: (...args: any[]) => console.error(formatMessage('error', args)),
+  info: (...args: any[]) => {
+    const msg = formatMessage('info', args);
+    console.log(msg);
+    storeLog(rawMessage('info', args));
+  },
+  warn: (...args: any[]) => {
+    const msg = formatMessage('warn', args);
+    console.warn(msg);
+    storeLog(rawMessage('warn', args));
+  },
+  error: (...args: any[]) => {
+    const msg = formatMessage('error', args);
+    console.error(msg);
+    storeLog(rawMessage('error', args));
+  },
+  getBuffer: (): LogBuffer[] => [...logBuffer], // 복사본 반환
+  clearBuffer: () => {
+    logBuffer.length = 0;
+  }
 };
 

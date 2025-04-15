@@ -9,6 +9,10 @@ export default class BcInfo extends Card implements IPage {
     constructor(private ch: IChannel) {
         super("html/bcinfo.html", "bcinfo", "BlockChain Info")
         ch.RegisterMsgHandler(RouteType.BlockInfoRes, (info: BlockInfo) => {
+            if (!info) {
+                window.ClickLoadPage('login', false)
+                return
+            }
             const domHeight = document.getElementById("blkheight")
             if (domHeight) domHeight.innerText = info.height.toString()
             const domLatestHash = document.getElementById("latesthash")
@@ -20,7 +24,18 @@ export default class BcInfo extends Card implements IPage {
             this.ch.SendMsg(RouteType.BlockListReq, info.height, (getCnt > 0) ? getCnt : 0)
         })
         ch.RegisterMsgHandler(RouteType.BlockListRes, (blocks: Block[]) => {
-
+            let html = ``
+            blocks.forEach((b) => {
+                html += `
+    <div class="row border-top">
+        <div class="col">${b.index}</div>
+        <div class="col">${b.hash}</div>
+        <div class="col">${b.transactions.length}</div>
+    </div>
+                `
+            })
+            const domTable = document.getElementById("blocklist")
+            domTable?.insertAdjacentHTML("beforeend", html)
         })
     }
     Release(): void {

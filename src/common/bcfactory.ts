@@ -9,12 +9,14 @@ import Blockchain from "./blockchain";
 import KeyManager from "@GBlibs/key/keys";
 import KeyMaker from "./keymaker";
 import { logger } from "@GBlibs/logger/logger";
+import BlockStats from "@GBlibs/blocks/blockstate";
 
 export default class BlockChainFactory {
     valid = new ValidatorManager()
     blocks = new BlockManager(this.valid)
     txs = new TransactionManager()
     pendingPool = new PendingTransactionPool()
+    blockState =  new BlockStats()
 
     /* Network */
     dhtPeer: DHTPeer

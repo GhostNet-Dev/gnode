@@ -14,4 +14,12 @@ export enum RouteType {
     BlockInfoRes = "bInfoRes",
     BlockListReq = "bListReq",
     BlockListRes = "bListRes",
+    AccountInfoReq = "accInfoReq",
+    AccountInfoRes = "accInfoRes",
+    GetBlockReq = "bStatReq",
+    GetBlockRes = "bStatRes",
+    GetPeersReq = "peersReq",
+    GetPeersRes = "peersRes",
+    GetLogsReq = "logsReq",
+    GetLogsRes = "logsRes",
 }
