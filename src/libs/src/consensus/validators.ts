@@ -1,45 +1,72 @@
 import { logger } from "@GBlibs/logger/logger";
 import { Level } from "level";
 
+export interface Validator {
+    id: string;
+    publicKey: string;
+    stake: number;
+    joinedAt: string;
+}
 // ✅ Validator 저장용 LevelDB
-const validatorDB = new Level<string, string[]>("./validator-db", { valueEncoding: "json" });
+const validatorDB = new Level<string, Validator[]>("./validator-db", { valueEncoding: "json" });
 const voteDB = new Level<string, string[]>("./vote-db", { valueEncoding: "json" });
 
 export default class ValidatorManager {
-    private validators: string[] = [];
+    private validators: Validator[] = [];
 
-    constructor() {
+    constructor(private url: string = "https://ghostwebservice.com") { 
         this.loadValidators();
+    }
+
+    async fetchValidators(): Promise<Validator[]> {
+        const response = await fetch(this.url + '/json/validators.json');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch validators: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        return data.validators as Validator[];
     }
 
     // ✅ Validator 목록 불러오기 (DB에서 로드)
     async loadValidators(): Promise<void> {
         try {
+            this.validators = await this.fetchValidators()
+            if (this.validators.length > 0) {
+                logger.info(`✅ Validator 목록 불러오기: ${this.validators.length}`);
+                await this.saveValidators();
+                return
+            }
+        } catch (error) {
+            logger.error(`Failed to fetch validators: ${error}`);
+        }
+        try {
             this.validators = await validatorDB.get("validators");
         } catch (error) {
-            this.validators = ["Node1", "Node2", "Node3", "Node4"]; // 기본 Validator 목록
-            await this.saveValidators();
+            throw new Error("Failed to load validators from LevelDB");
         }
+        await this.saveValidators();
     }
 
     // ✅ Validator 목록 저장
     async saveValidators(): Promise<void> {
+        logger.info(`✅ Validator 목록 저장: ${this.validators.length} -> ${this.validators.map(v => v.publicKey)}`);
         await validatorDB.put("validators", this.validators);
     }
 
     // ✅ Validator 목록 조회
-    getValidators(): string[] {
+    getValidators(): Validator[] {
         return this.validators;
     }
 
     // ✅ Validator 직접 설정
-    async setValidators(validators: string[]): Promise<void> {
+    async setValidators(validators: Validator[]): Promise<void> {
         this.validators = validators;
         await this.saveValidators();
     }
 
     // ✅ Validator 추가
-    async addValidator(newValidator: string): Promise<void> {
+    async addValidator(newValidator: Validator): Promise<void> {
         if (!this.validators.includes(newValidator)) {
             this.validators.push(newValidator);
             await this.saveValidators();
@@ -48,7 +75,7 @@ export default class ValidatorManager {
     }
 
     // ✅ Validator 삭제
-    async removeValidator(validator: string): Promise<void> {
+    async removeValidator(validator: Validator): Promise<void> {
         this.validators = this.validators.filter(v => v !== validator);
         await this.saveValidators();
         logger.info(`❌ Validator 삭제됨: ${validator}`);

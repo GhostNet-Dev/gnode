@@ -72,7 +72,7 @@ export default class BlockManager {
       timestamp: Date.now(),
       transactions,
       validator,
-      validators,
+      validators: validators.map(v => v.publicKey),
       hash: "",
     };
 

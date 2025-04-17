@@ -38,7 +38,7 @@ export default class MakeAccountPage extends Page implements IPage {
       const passwordHashed = await this.hashPassword(pw);
       this.ch.SendMsg(RouteType.MakeAccountReq, id, passwordHashed)
     });
-    this.ch.RegisterMsgHandler(RouteType.MakeAccountReq, ({ ret, pubKey, privKey }: { ret: boolean, pubKey: string, privKey: string }) => {
+    this.ch.RegisterMsgHandler(RouteType.MakeAccountRes, ({ ret, pubKey, privKey }: { ret: boolean, pubKey: string, privKey: string }) => {
       // 1. 시드 구문 생성 (BIP39 사용)
       if(!ret) {
         mnemonicBox.textContent = "생성에 실패하였습니다."

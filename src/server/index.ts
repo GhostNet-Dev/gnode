@@ -71,7 +71,7 @@ const g_handler: Handler = {
     },
     [RouteType.MakeAccountReq]: async (ws: any, id: string, pass: string) => {
         const ret = await factory.route.MakeAccount(id, pass)
-        ws.send(JSON.stringify({ types: RouteType.LoadKeysRes, params: ret }));
+        ws.send(JSON.stringify({ types: RouteType.MakeAccountRes, params: ret }));
     },
     [RouteType.AccountListReq]: async (ws: any) => {
         const ret = await factory.route.GetAcountList()

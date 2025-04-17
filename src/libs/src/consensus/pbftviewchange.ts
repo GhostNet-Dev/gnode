@@ -1,35 +1,34 @@
 import { logger } from "@GBlibs/logger/logger";
 import { NetworkInterface } from "@GBlibs/network/inetwork";
+import { Validator } from "./validators";
 
 export default class PBFTViewChange {
-  nodes: string[];
-  primaryNode: string;
+  primaryNode: Validator;
   viewNumber: number;
   timeoutThreshold: number;
   timeoutCount: { [key: string]: number };
 
   constructor(
     private pbftNetwork: NetworkInterface,
-    nodes: string[],
-    currentPrimary: string,
+    private nodes: Validator[],
+    currentPrimary: Validator,
     currentView: number = 0,
     timeoutThreshold: number = 3
   ) {
-    this.nodes = nodes;
     this.primaryNode = currentPrimary;
     this.viewNumber = currentView;
     this.timeoutThreshold = timeoutThreshold;
 
     this.timeoutCount = {};
     for (const node of this.nodes) {
-      this.timeoutCount[node] = 0;
+      this.timeoutCount[node.publicKey] = 0;
     }
 
     logger.info(`🔵 [PBFT View Change 시작] Primary 노드: ${this.primaryNode}, View Number: ${this.viewNumber}`);
   }
 
   // ✅ View Change 요청을 보냄
-  async requestViewChange(): Promise<string | null> {
+  async requestViewChange(): Promise<Validator | null> {
     logger.info("⚠️ [View Change] View Change 요청 중...");
 
     return new Promise((resolve) => {
@@ -56,7 +55,7 @@ export default class PBFTViewChange {
   }
 
   // ✅ 새로운 Primary를 선정
-  selectNewPrimary(): string {
+  selectNewPrimary(): Validator {
     this.viewNumber++;
     const newPrimary = this.nodes[this.viewNumber % this.nodes.length];
     logger.info(`🔄 [View Change 성공] 새로운 Primary 노드: ${newPrimary}`);

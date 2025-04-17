@@ -1,5 +1,5 @@
 import PBFTViewChange from "./pbftviewchange";
-import ValidatorManager from "./validators";
+import ValidatorManager, { Validator } from "./validators";
 import BlockManager from "@GBlibs/blocks/blocks";
 import TransactionManager from "@GBlibs/txs/txs";
 import { Block } from "@GBlibs/blocks/blocktypes";
@@ -7,7 +7,7 @@ import { NetworkInterface } from "@GBlibs/network/inetwork";
 import { logger } from "@GBlibs/logger/logger";
 
 export default class PBFTConsensus {
-  primaryNode: string;
+  primaryNode: Validator;
   viewNumber: number = 0;
   timeoutDuration: number = 5000;
   validatorManager: ValidatorManager;
@@ -37,7 +37,7 @@ export default class PBFTConsensus {
     logger.info(`🟢 [Pre-Prepare] ${this.primaryNode} 블록 생성 요청`);
 
     // 🔍 새로운 블록 생성
-    const newBlock = await this.blockManager.createBlock(transactions, this.primaryNode, this.txManager);
+    const newBlock = await this.blockManager.createBlock(transactions, this.primaryNode.publicKey, this.txManager);
     const oldBlock = await this.blockManager.getLatestBlock()
     if(!oldBlock) {
       logger.error("❌ [Pre-Prepare] 이전 블록이 존재하지 않습니다!");
