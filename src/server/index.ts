@@ -102,11 +102,11 @@ const g_handler: Handler = {
         const ret = await factory.route.GetBlock(year, month, day)
         ws.send(JSON.stringify({ types: RouteType.GetBlockRes, params: ret }));
     },
-    [RouteType.GetPeersReq]: async (ws: any, year:number, month:number, day:number) => {
-        const ret = await factory.route.GetPeers()
-        ws.send(JSON.stringify({ types: RouteType.GetPeersRes, params: ret }));
+    [RouteType.GetNetInfoReq]: async (ws: any) => {
+        const ret = await factory.route.GetNetInfo()
+        ws.send(JSON.stringify({ types: RouteType.GetNetInfoRes, params: ret }));
     },
-    [RouteType.GetLogsReq]: async (ws: any, year:number, month:number, day:number) => {
+    [RouteType.GetLogsReq]: async (ws: any) => {
         const ret = await factory.route.GetLogs()
         ws.send(JSON.stringify({ types: RouteType.GetLogsRes, params: ret }));
     },

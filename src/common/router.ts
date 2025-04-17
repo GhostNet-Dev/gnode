@@ -3,7 +3,7 @@ import { BlockInfo } from "@GBlibs/types/blockinfotypes";
 import KeyMaker from "./keymaker";
 import crypto from "crypto"
 import BlockChainFactory from "./bcfactory";
-import { AccountData } from "src/types/infotypes";
+import { AccountData, NetData } from "src/types/infotypes";
 import { logger } from "@GBlibs/logger/logger";
 
 export default class AppRoutes {
@@ -82,13 +82,16 @@ export default class AppRoutes {
         }
         return ret
     }
-    async GetPeers() { 
-        if(!this.bcFab) return []
-        let peerAddr:string[] = []
+    GetNetInfo(): NetData | undefined { 
+        if(!this.bcFab) return 
+        let peerAddrs:string[] = []
         this.bcFab.dhtPeer.peers.forEach((_, key) => {
-            peerAddr.push(key)
+            peerAddrs.push(key)
         })
-        return peerAddr
+        return { 
+            peerAddrs,
+            validators: this.bcFab.valid.getValidators()
+        }
     }
     GetLogs() {
         return logger.getBuffer()

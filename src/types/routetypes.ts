@@ -18,8 +18,8 @@ export enum RouteType {
     AccountInfoRes = "accInfoRes",
     GetBlockReq = "bStatReq",
     GetBlockRes = "bStatRes",
-    GetPeersReq = "peersReq",
-    GetPeersRes = "peersRes",
+    GetNetInfoReq = "netinfoReq",
+    GetNetInfoRes = "netinfoRes",
     GetLogsReq = "logsReq",
     GetLogsRes = "logsRes",
 }
