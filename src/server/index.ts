@@ -5,12 +5,12 @@ import fs from 'fs'
 import { readFile } from 'fs';
 import { join } from 'path';
 import { Mime } from "mime"
-import BlockChainFactory from '@Commons/bcfactory';
 import { C2SMsg, Handler } from '@Commons/icom';
 import { RouteType } from "../types/routetypes"
 import BootFactory from '@Commons/bootfactory';
 import { logger } from '@GBlibs/logger/logger';
-const WebSocketServer = require('ws');
+import { WebSocket, WebSocketServer } from 'ws';
+import { NetAdapter } from './netadpater';
 
 export const PORT = 3000;
 const mime = new Mime()
@@ -63,7 +63,7 @@ server.listen(PORT, () => {
 });
 
 
-const wss = new WebSocketServer.Server({ port: 3001 });
+const wss = new WebSocketServer({ port: 3001 });
 const g_handler: Handler = {
     [RouteType.LoadKeysReq]: async (ws: any, id: string, pass: string) => {
         const ret = await factory.route.LoadKeys(id, pass)
@@ -110,8 +110,11 @@ const g_handler: Handler = {
         const ret = await factory.route.GetLogs()
         ws.send(JSON.stringify({ types: RouteType.GetLogsRes, params: ret }));
     },
+    [RouteType.PeerStart]: async (ws: any) => {
+        factory.route.NetStart(new NetAdapter(ws, g_handler))
+    },
 }
-wss.on("connection", (ws: any) => {
+wss.on("connection", (ws: WebSocket) => {
     logger.info("connect");
     ws.on("message", (data: any) => {
         const msg: C2SMsg = JSON.parse(data);

@@ -5,10 +5,15 @@ import crypto from "crypto"
 import BlockChainFactory from "./bcfactory";
 import { AccountData, NetData } from "src/types/infotypes";
 import { logger } from "@GBlibs/logger/logger";
+import { Handler } from "./icom";
+import { NetAdapter } from "src/server/netadpater";
+import { WebSocket } from "ws";
+import { NetworkInterface } from "@GBlibs/network/inetwork";
 
 export default class AppRoutes {
     secret = ""
     bcFab?: BlockChainFactory
+    net?: NetworkInterface
     constructor(
         private keyMaker: KeyMaker,
         private session: SessionServer,
@@ -23,22 +28,27 @@ export default class AppRoutes {
     async GetAcountList() {
         return await this.keyMaker.GetAccountList()
     }
+    async NetStart(net: NetworkInterface) {
+        this.net = net
+        this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr, this.net)
+    }
     async Login(id: string, pass: string) {
         const ret = await this.keyMaker.Login(id, pass)
         if(ret) {
             this.secret = crypto.randomBytes(64).toString("hex")
             const token = this.session.generateToken(id, this.secret)
-            this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr)
-            return {ret, token}
+            return {ret, token, addr: this.keyMaker.GetBase58PubKey()}
         }
-        return { ret, token: null }
+        return { ret, token: null, addr: null }
     }
     async SessionCheck(token: string) {
+        if(!this.net) return
+
         const ret = this.session.verifyToken(token, this.secret)
         if(ret != null && this.keyMaker.id == ret) {
-            this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr)
+            this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr, this.net)
         }
-        return ret
+        return { ret, addr: this.keyMaker.GetBase58PubKey() }
     }
     async GetBlockInfo() {
         if(!this.bcFab) return 
@@ -85,9 +95,6 @@ export default class AppRoutes {
     GetNetInfo(): NetData | undefined { 
         if(!this.bcFab) return 
         let peerAddrs:string[] = []
-        this.bcFab.dhtPeer.peers.forEach((_, key) => {
-            peerAddrs.push(key)
-        })
         return { 
             peerAddrs,
             validators: this.bcFab.valid.getValidators()

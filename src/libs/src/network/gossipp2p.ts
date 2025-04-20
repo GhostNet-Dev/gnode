@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from "uuid";
 import DHTPeer from "./dhtpeer";
 import { GPType, GPacket } from "./packet";
 import { NetworkInterface } from "./inetwork";
-import { logger } from "@GBlibs/logger/logger";
 
 /**
  * PeerJS 기반 Gossip Protocol (PBFT NetworkInterface 호환)
@@ -31,7 +30,7 @@ export default class GossipP2P implements NetworkInterface {
       if (this.receivedMessages.has(messageId)) return; // 중복 메시지 무시
       this.receivedMessages.add(messageId);
 
-      logger.info(`🔵 [GossipP2P] 트랜잭션 수신: ${JSON.stringify(transaction)}`);
+      console.log(`🔵 [GossipP2P] 트랜잭션 수신: ${JSON.stringify(transaction)}`);
 
       // ✅ 이벤트 리스너 실행 (PBFT와 호환)
       this.triggerEvent("transaction", transaction, conn);
@@ -51,7 +50,7 @@ export default class GossipP2P implements NetworkInterface {
     if (this.receivedMessages.has(messageId)) return; // 중복 전송 방지
 
     this.receivedMessages.add(messageId);
-    logger.info(`📡 [GossipP2P] 메시지 전송: ${event}, 데이터: ${JSON.stringify(data)}`);
+    console.log(`📡 [GossipP2P] 메시지 전송: ${event}, 데이터: ${JSON.stringify(data)}`);
 
     // 무작위로 일부 노드에게 Gossip 방식으로 전송
     this.getRandomPeers().forEach((conn) => conn.send({ type: event, data, messageId }));

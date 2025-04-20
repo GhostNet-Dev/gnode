@@ -3,11 +3,15 @@ import Page, { IPage } from "@Webs/views/page";
 import { sha256 } from "js-sha256";
 import { RouteType } from "../../types/routetypes";
 import Sessions from "src/wlibs/src/sessions/session";
+import DHTPeer from "@GBlibs/network/dhtpeer";
+import GossipP2P from "@GBlibs/network/gossipp2p";
+import { RendererNet } from "@Commons/renderernet";
 
 export default class LoginPage extends Page implements IPage {
   id = ""
   constructor(private ch: IChannel, private sess: Sessions) {
     super("html/login.html")
+
 
     this.ch.RegisterMsgHandler(RouteType.AccountListRes, (data: { key: string, value: string }[]) => {
       const dom = document.getElementById("acclist")
@@ -23,20 +27,20 @@ export default class LoginPage extends Page implements IPage {
         dom.innerHTML = html
       }
     })
-    this.ch.RegisterMsgHandler(RouteType.LoginRes, (res: { ret: boolean, token: string }) => {
+    this.ch.RegisterMsgHandler(RouteType.LoginRes, (res: { ret: boolean, token: string, addr: string }) => {
       const resultEl = document.getElementById('result') as HTMLDivElement;
       if (res.ret) {
         this.sess.saveToken(res.token)
         resultEl.textContent = '로그인 성공!';
         // TODO: redirect or save token
-        this.SuccessLogin()
+        this.SuccessLogin(res.addr)
       } else {
         resultEl.textContent = '로그인 실패';
       }
     })
-    this.ch.RegisterMsgHandler(RouteType.SessionCheckRes, async (userId: string | null) => {
-      if (userId != null) {
-        this.SuccessLogin()
+    this.ch.RegisterMsgHandler(RouteType.SessionCheckRes, async (ret: { userId: string | null, addr: string }) => {
+      if (ret != null) {
+        this.SuccessLogin(ret.addr)
       } else {
         await this.LoadHtml()
         this.binding()
@@ -48,13 +52,15 @@ export default class LoginPage extends Page implements IPage {
       window.ClickLoadPage('login', false)
     })
   }
-  SuccessLogin() {
+  SuccessLogin(pubKey:string) {
     const menu = document.getElementById('navbarLoginMenu') as HTMLUListElement;
     menu.style.display = "none"
     const menuOut = document.getElementById('navbarLogoutMenu') as HTMLUListElement;
     menuOut.style.display = "block"
     const acc = document.getElementById('accountTxt') as HTMLLIElement;
     acc.innerText = this.id
+
+    new RendererNet(this.ch, new GossipP2P(new DHTPeer(pubKey)))
 
     window.ClickLoadPage('dashboard', false)
   }

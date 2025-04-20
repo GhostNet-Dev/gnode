@@ -2,7 +2,6 @@ import Peer, { DataConnection } from "peerjs";
 import { v4 as uuidv4 } from "uuid"
 import { peerConfig } from "./peer";
 import { GPType, GPacket } from "./packet";
-import { logger } from "@GBlibs/logger/logger";
 
 /**
  * PeerJS 기반 DHT 네트워크
@@ -15,41 +14,61 @@ export default class DHTPeer {
     private clients: Function[][] = []
     id = uuidv4()
 
-    constructor(peerId?: string) {
+    constructor(peerId?: string, private url: string = "https://ghostwebservice.com") {
         const id = "GhostNet:" + ((peerId) ? peerId : this.id)
         this.peer = new Peer(id, { config: peerConfig });
         this.peers = new Map();
         this.keyValueStore = new Map();
         this.initHandler()
         this.setupPeerEvents();
-        logger.info("node id = " + id)
+        this.id = id
+        console.log("node id = " + id)
     }
+    async fetchRoots() {
+        const response = await fetch(this.url + '/json/validators.json');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch validators: ${response.statusText}`);
+        }
 
+        const data = await response.json();
+        const roots = data.validators as any[];
+        roots.forEach((r: any) => {
+            const rootId = "GhostNet:" + r.publicKey
+            if (rootId != this.id) {
+                console.log("root connect = " + rootId)
+                this.connectToPeer(rootId)
+            }
+        })
+    }
     /**
      * PeerJS 이벤트 설정
      */
     private setupPeerEvents() {
-    
+        this.peer.on("error", (err) => {
+            console.error("❌ Peer 연결 오류:", err);
+        });
+
         this.peer.on('open', (id) => {
-            logger.info(`Peer ID: ${id}`);
+            console.log(`Peer ID: ${id}`);
+            this.fetchRoots()
         });
 
         this.peer.on('connection', (conn) => {
-            logger.info(`Connected to: ${conn.peer}`);
+            console.log(`Connected to: ${conn.peer}`);
             this.peers.set(conn.peer, conn);
 
             conn.on('open', () => {
-                logger.info(`🔗 PeerJS Connection Established with ${conn.peer}`);
+                console.log(`🔗 PeerJS Connection Established with ${conn.peer}`);
 
                 // WebRTC 연결 상태 확인
                 conn.peerConnection.oniceconnectionstatechange = () => {
-                    logger.info(`🔍 ICE Connection State: ${conn.peerConnection.iceConnectionState}`);
+                    console.log(`🔍 ICE Connection State: ${conn.peerConnection.iceConnectionState}`);
                 };
             });
 
             conn.on('data', (data) => this.handleIncomingData(data as GPacket, conn));
             conn.on('close', () => {
-                logger.info(`Disconnected from: ${conn.peer}`);
+                console.log(`Disconnected from: ${conn.peer}`);
                 this.peers.delete(conn.peer);
             });
         });
@@ -60,16 +79,25 @@ export default class DHTPeer {
      */
     connectToPeer(peerId: string) {
         if (this.peers.has(peerId)) return;
+        if (!this.peer || !this.peer.id) {
+            console.error("❌ Peer 객체가 아직 초기화되지 않았습니다.");
+            return;
+        }
 
         const conn = this.peer.connect(peerId);
+        if (!conn) {
+            console.error(`❌ peer.connect(${peerId}) 실패: 반환값이 undefined입니다.`);
+            return;
+        }
+
         conn.on('open', () => {
-            logger.info(`Connected to ${peerId}`);
+            console.log(`Connected to ${peerId}`);
             this.peers.set(peerId, conn);
         });
 
         conn.on('data', (data) => this.handleIncomingData(data as GPacket, conn));
         conn.on('close', () => {
-            logger.info(`Disconnected from: ${peerId}`);
+            console.log(`Disconnected from: ${peerId}`);
             this.peers.delete(peerId);
         });
     }
@@ -84,7 +112,7 @@ export default class DHTPeer {
         } else {
             // 직접 저장 (자신이 가장 가까운 노드일 경우)
             this.keyValueStore.set(key, value);
-            logger.info(`Stored Locally - Key: ${key}, Value: ${value}`);
+            console.log(`Stored Locally - Key: ${key}, Value: ${value}`);
         }
     }
 
@@ -93,7 +121,7 @@ export default class DHTPeer {
      */
     lookupData(key: string) {
         if (this.keyValueStore.has(key)) {
-            logger.info(`Data Found Locally - Key: ${key}, Value: ${this.keyValueStore.get(key)}`);
+            console.log(`Data Found Locally - Key: ${key}, Value: ${this.keyValueStore.get(key)}`);
             return this.keyValueStore.get(key);
         }
 
@@ -101,7 +129,7 @@ export default class DHTPeer {
         if (closestPeer) {
             this.peers.get(closestPeer)?.send({ type: 'lookup', key });
         } else {
-            logger.info(`Data Not Found for Key: ${key}`);
+            console.log(`Data Not Found for Key: ${key}`);
         }
     }
 
@@ -162,14 +190,14 @@ export default class DHTPeer {
             }
         }
         this.handler[GPType.DHTLookupCq] = (data: GPacket, conn: DataConnection) => {
-            logger.info(`Lookup Response - Key: ${data.key}, Value: ${data.value}`);
+            console.log(`Lookup Response - Key: ${data.key}, Value: ${data.value}`);
             this.clients[GPType.DHTLookupCq].forEach((c) => {
                 c(data, conn)
             })
         }
         this.handler[GPType.DHTStoreSq] = (data: GPacket, conn: DataConnection) => {
             this.keyValueStore.set(data.key, data.value);
-            logger.info(`Received and Stored - Key: ${data.key}, Value: ${data.value}`);
+            console.log(`Received and Stored - Key: ${data.key}, Value: ${data.value}`);
         }
     }
 }

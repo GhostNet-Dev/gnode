@@ -22,4 +22,9 @@ export enum RouteType {
     GetNetInfoRes = "netinfoRes",
     GetLogsReq = "logsReq",
     GetLogsRes = "logsRes",
+    PeerStart = "peerStart",
+    PeerReq = "peerReq",
+    PeerRes = "peerRes",
+    PeerOnReg = "peerOn",
+    PeerOnceReg = "peerOnce",
 }

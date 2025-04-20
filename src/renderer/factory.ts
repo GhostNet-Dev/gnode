@@ -11,6 +11,10 @@ import LogoutPage from "./views/logout";
 import AccountInfo from "./cards/account";
 import NetInfo from "./cards/netinfo";
 import LogCard from "./cards/logs";
+import DHTPeer from "@GBlibs/network/dhtpeer";
+import GossipP2P from "@GBlibs/network/gossipp2p";
+import { RouteType } from "src/types/routetypes";
+import { RendererNet } from "@Commons/renderernet";
 
 declare global {
     interface Window {
@@ -35,6 +39,7 @@ export default class RendererFactory {
     async Initialize() {
         // await this.bcInfo.LoadHtml()
         // await this.mining.LoadHtml()
+        
     }
 
     public Build(): FuncMap {
