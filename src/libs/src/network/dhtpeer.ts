@@ -15,7 +15,7 @@ export default class DHTPeer {
     id = uuidv4()
 
     constructor(peerId?: string, private url: string = "https://ghostwebservice.com") {
-        const id = "GhostNet:" + ((peerId) ? peerId : this.id)
+        const id = "GhostNet-" + ((peerId) ? peerId : this.id)
         this.peer = new Peer(id, { config: peerConfig });
         this.peers = new Map();
         this.keyValueStore = new Map();
@@ -33,9 +33,9 @@ export default class DHTPeer {
         const data = await response.json();
         const roots = data.validators as any[];
         roots.forEach((r: any) => {
-            const rootId = "GhostNet:" + r.publicKey
+            const rootId = "GhostNet-" + r.publicKey
             if (rootId != this.id) {
-                console.log("root connect = " + rootId)
+                console.log("root connect = " + rootId + ", my id = " + this.id)
                 this.connectToPeer(rootId)
             }
         })
