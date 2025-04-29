@@ -14,6 +14,13 @@ export default class GossipP2P implements NetworkInterface {
   private eventListeners: Map<string, ((data: any, conn?: DataConnection) => void)[]>;
   private onceListeners: Map<string, ((data: any, conn?: DataConnection) => void)>;
 
+  /**
+   * Gossip Network 내 모든 Peer ID 반환
+   */
+  get Peers(): string[] {
+    return Array.from(this.peers.keys());
+  }
+
   id = uuidv4();
 
   constructor(dht: DHTPeer) {

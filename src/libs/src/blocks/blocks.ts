@@ -5,23 +5,25 @@ import crypto from "crypto";
 import TransactionManager from "@GBlibs/txs/txs";
 import ValidatorManager from "@GBlibs/consensus/validators";
 import { logger } from "@GBlibs/logger/logger";
-
-// 블록 저장용 DB
-export const blockDB = new Level<string, Block>("./block-db", { valueEncoding: "json" });
-
+import { IDBManager, IGenericDB } from "@GBlibs/db/dbtypes";
 
 export default class BlockManager {
+  private blockDB: IGenericDB<Block>;
 
-  constructor(private validatorMgr: ValidatorManager) {
-    this.initialize()
-   }
-
+  constructor(
+    private validatorMgr: ValidatorManager,
+    private dbMgr: IDBManager
+  ) {
+    this.blockDB = this.dbMgr.getDB<Block>("block-db");
+    this.initialize();
+  }
   async initialize() {
-    if (blockDB.status !== "open") {
-      blockDB.open();
+
+    if (this.blockDB.getStatus() !== "open") {
+      this.blockDB.open();
     }
     const blk = await this.getLatestBlock()
-    if(!blk) {
+    if (!blk) {
       this.saveBlock(this.createGenesisBlock())
     }
   }
@@ -42,7 +44,7 @@ export default class BlockManager {
   // ✅ 체인 내 마지막 블록 반환
   async getLatestBlock() {
     try {
-      const block = await blockDB.get("latest");
+      const block = await this.blockDB.get("latest");
       return block;
     } catch {
       return undefined
@@ -54,7 +56,7 @@ export default class BlockManager {
     const previousBlock = await this.getLatestBlock();
     const validators = await this.validatorMgr.getValidators();
 
-    if(!previousBlock) throw new Error("there is no block")
+    if (!previousBlock) throw new Error("there is no block")
 
     // 🔄 중계자(Mediator) 목록 추출 및 보상 분배
     const mediatorRewards = this.calculateMediatorRewards(transactions);
@@ -196,24 +198,27 @@ export default class BlockManager {
 
   // ✅ 블록 저장
   async saveBlock(block: Block): Promise<void> {
-    await blockDB.put("latest", block);
-    await blockDB.put(block.index.toString(), block);
+    await this.blockDB.put("latest", block);
+    await this.blockDB.put(block.index.toString(), block);
     logger.info(`✅ 블록 저장 완료: ${block.index}`);
   }
 
   async getLatestBlockIndex(): Promise<number> {
-      try {
-          const block = await blockDB.get("latest");
-          return block.index;
-      } catch {
-          return 0; // 제네시스만 있을 경우
-      }
+    try {
+      const block = await this.blockDB.get("latest");
+      if(block === undefined) throw new Error("there is no block")
+      return block.index;
+    } catch {
+      return 0; // 제네시스만 있을 경우
+    }
   }
 
   // ✅ 블록 조회
   async getBlock(index: number): Promise<Block | null> {
     try {
-      return await blockDB.get(index.toString());
+      const block = await this.blockDB.get(index.toString());
+      if(!block) return null
+      return block;
     } catch (error) {
       return null;
     }
@@ -223,7 +228,7 @@ export default class BlockManager {
  */
   async getBlockchain(): Promise<Block[]> {
     const blocks: Block[] = [];
-    for await (const [, block] of blockDB.iterator()) {
+    for await (const [, block] of this.blockDB.iterator()) {
       blocks.push(block);
     }
     return blocks.sort((a, b) => a.index - b.index); // 블록 번호 순으로 정렬

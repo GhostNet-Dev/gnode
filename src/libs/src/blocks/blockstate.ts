@@ -1,17 +1,21 @@
 // dailyBlockStats.ts
+import { IDBManager, IGenericDB } from "@GBlibs/db/dbtypes";
 import { Block } from "./blocktypes";
 import { logger } from "@GBlibs/logger/logger";
-import { blockDB } from "./blocks";
 
 // LevelDB 인스턴스 (block index -> Block)
 export default class BlockStats {
+  private blockDB: IGenericDB<Block>
+  constructor(dbMgr: IDBManager) { 
+    this.blockDB = dbMgr.getDB<Block>("block-db");
+  }
   /**
    * ✅ 특정 일자(연-월-일)의 블록 수 반환 (YYYY, MM, DD 분리 입력)
    */
   async getBlockCountForDate(year: number, month: number, day: number): Promise<number> {
     let count = 0;
 
-    for await (const [, value] of blockDB.iterator()) {
+    for await (const [, value] of this.blockDB.iterator()) {
       const block = value as Block;
       const date = new Date(block.timestamp);
 
@@ -33,7 +37,7 @@ export default class BlockStats {
   async getBlocksForDateGrouped(year: number, month: number, day: number): Promise<Record<string, Block[]>> {
     const groupedBlocks: Record<string, Block[]> = {};
 
-    for await (const [, value] of blockDB.iterator()) {
+    for await (const [, value] of this.blockDB.iterator()) {
       const block = value as Block;
       const date = new Date(block.timestamp);
 
@@ -63,7 +67,7 @@ export default class BlockStats {
   async getDailyBlockCounts(): Promise<Record<string, number>> {
     const dailyCounts: Record<string, number> = {};
 
-    for await (const [, value] of blockDB.iterator()) {
+    for await (const [, value] of this.blockDB.iterator()) {
       const block = value as Block;
       const date = new Date(block.timestamp);
       const dayStr = date.toISOString().split("T")[0]; // YYYY-MM-DD

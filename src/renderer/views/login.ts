@@ -9,7 +9,7 @@ import { RendererNet } from "@Commons/renderernet";
 
 export default class LoginPage extends Page implements IPage {
   id = ""
-  constructor(private ch: IChannel, private sess: Sessions) {
+  constructor(private ch: IChannel, private sess: Sessions, private net: RendererNet) {
     super("html/login.html")
 
 
@@ -60,7 +60,7 @@ export default class LoginPage extends Page implements IPage {
     const acc = document.getElementById('accountTxt') as HTMLLIElement;
     acc.innerText = this.id
 
-    new RendererNet(this.ch, new GossipP2P(new DHTPeer(pubKey)))
+    this.net.StartPeer(this.ch, new GossipP2P(new DHTPeer(pubKey)))
 
     window.ClickLoadPage('dashboard', false)
   }

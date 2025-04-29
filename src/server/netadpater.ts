@@ -4,6 +4,8 @@ import { RouteType } from "../types/routetypes";
 import { WebSocket } from "ws";
 
 export class NetAdapter implements NetworkInterface {
+    get Peers(): string[] { return [] }
+
     private eventListeners = new Map<string, ((data: any) => void)[]>;
     private onceListeners = new Map<string, ((data: any) => void)>;
     constructor(private ws: WebSocket, private g_handler: Handler) { 

@@ -89,8 +89,13 @@ export default class DHTPeer {
             console.error(`❌ peer.connect(${peerId}) 실패: 반환값이 undefined입니다.`);
             return;
         }
+        const timeout = setTimeout(() => {
+            console.error(`❌ peer.connect(${peerId}) 실패: Timeout`);
+            setTimeout(() => this.connectToPeer(peerId), 60000);
+        }, 10_000);
 
         conn.on('open', () => {
+            clearTimeout(timeout);
             console.log(`Connected to ${peerId}`);
             this.peers.set(peerId, conn);
         });

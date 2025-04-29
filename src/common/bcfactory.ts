@@ -7,15 +7,16 @@ import Blockchain from "./blockchain";
 import KeyManager from "@GBlibs/key/keys";
 import KeyMaker from "./keymaker";
 import BlockStats from "@GBlibs/blocks/blockstate";
-import { NetAdapter } from "../server/netadpater";
 import { NetworkInterface } from "@GBlibs/network/inetwork";
+import { LevelDBManager } from "@GBlibs/db/leveldbm";
 
 export default class BlockChainFactory {
+    dbMgr = new LevelDBManager();
     valid = new ValidatorManager()
-    blocks = new BlockManager(this.valid)
+    blocks = new BlockManager(this.valid, this.dbMgr)
     txs = new TransactionManager()
     pendingPool = new PendingTransactionPool()
-    blockState =  new BlockStats()
+    blockState =  new BlockStats(this.dbMgr)
 
 
     pbftCons: PBFTConsensus

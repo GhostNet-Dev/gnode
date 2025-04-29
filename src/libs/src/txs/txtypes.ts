@@ -3,6 +3,8 @@ export interface UTXO {
   index: number;
   amount: number;
   owner: string;
+  key?: string;      // key-value 기반 데이터 식별자 (선택)
+  hash?: string;     // 데이터 해시 또는 "__deleted__" (선택)
 }
 
 export interface Transaction {
