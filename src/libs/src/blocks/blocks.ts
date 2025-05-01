@@ -1,6 +1,5 @@
-import { Transaction, UTXO } from "@GBlibs/txs/txtypes";
+import { Transaction } from "@GBlibs/txs/txtypes";
 import { Block } from "./blocktypes";
-import { Level } from "level";
 import crypto from "crypto";
 import TransactionManager from "@GBlibs/txs/txs";
 import ValidatorManager from "@GBlibs/consensus/validators";

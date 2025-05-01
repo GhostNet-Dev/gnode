@@ -27,4 +27,10 @@ export enum RouteType {
     PeerRes = "peerRes",
     PeerOnReg = "peerOn",
     PeerOnceReg = "peerOnce",
+    DbGetReq = "dbgReq",
+    DbPutReq = "dbpReq",
+    DbDelReq = "dbDReq",
+    DbIterReq = "dbiReq",
+    DbIterChunk = "dbiChunk",
+    DbRes = "dbRes",
 }

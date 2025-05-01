@@ -8,25 +8,36 @@ import KeyManager from "@GBlibs/key/keys";
 import KeyMaker from "./keymaker";
 import BlockStats from "@GBlibs/blocks/blockstate";
 import { NetworkInterface } from "@GBlibs/network/inetwork";
-import { LevelDBManager } from "@GBlibs/db/leveldbm";
+import { IChannel } from "./icom";
+import { DBAdapterManager } from "./dbmadapter";
 
 export default class BlockChainFactory {
-    dbMgr = new LevelDBManager();
-    valid = new ValidatorManager()
-    blocks = new BlockManager(this.valid, this.dbMgr)
-    txs = new TransactionManager()
-    pendingPool = new PendingTransactionPool()
-    blockState =  new BlockStats(this.dbMgr)
+    dbMgr: DBAdapterManager
+    valid: ValidatorManager
+    blocks: BlockManager
+    txs: TransactionManager
+    pendingPool: PendingTransactionPool
+    blockState: BlockStats
+    keys: KeyManager
+    keyMaker: KeyMaker
 
 
     pbftCons: PBFTConsensus
-    blockChain:Blockchain
+    blockChain: Blockchain
 
     constructor(
-        private keyMaker: KeyMaker, 
-        private keys: KeyManager,
         private net: NetworkInterface,
+        private ch: IChannel,
     ) {
+
+        this.dbMgr = new DBAdapterManager(this.ch);
+        this.keys = new KeyManager(this.dbMgr)
+        this.keyMaker = new KeyMaker(this.keys)
+        this.valid = new ValidatorManager(this.dbMgr)
+        this.blocks = new BlockManager(this.valid, this.dbMgr)
+        this.txs = new TransactionManager(this.dbMgr)
+        this.pendingPool = new PendingTransactionPool(this.dbMgr)
+        this.blockState = new BlockStats(this.dbMgr)
         /* Network */
 
         this.pbftCons = new PBFTConsensus(this.valid, this.blocks, this.txs, this.net)

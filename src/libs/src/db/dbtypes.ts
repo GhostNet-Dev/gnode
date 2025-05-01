@@ -1,5 +1,4 @@
 // IGenericDB.ts
-// IGenericDB.ts
 export interface IGenericDB<T> {
   open(): Promise<void>;
   get(key: string): Promise<T | undefined>;

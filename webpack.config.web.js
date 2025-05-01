@@ -7,7 +7,7 @@ const g_resolve = {
         "@Glibs": path.resolve(__dirname, "src/gsdk/src"),
         "@GBlibs": path.resolve(__dirname, "src/libs/src"),
         "@Webs": path.resolve(__dirname, "src/wlibs/src"),
-    }
+    },
 }
 const g_module = {
     rules: [
@@ -48,6 +48,14 @@ module.exports = [{
         filename: 'index.js'
     },
     module: g_module,
-    resolve: g_resolve,
+    resolve: {
+        ...g_resolve,
+        fallback: {
+            crypto: require.resolve("crypto-browserify"),
+            stream: require.resolve("stream-browserify"),
+            buffer: require.resolve("buffer"),
+            vm: false,
+        },
+    },
 }];
 

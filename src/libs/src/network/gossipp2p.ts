@@ -8,8 +8,8 @@ import { NetworkInterface } from "./inetwork";
  * PeerJS 기반 Gossip Protocol (PBFT NetworkInterface 호환)
  */
 export default class GossipP2P implements NetworkInterface {
-  private peer: Peer;
-  private peers: Map<string, DataConnection>;
+  peer: Peer;
+  peers: Map<string, DataConnection>;
   private receivedMessages: Set<string>; // 중복 메시지 방지
   private eventListeners: Map<string, ((data: any, conn?: DataConnection) => void)[]>;
   private onceListeners: Map<string, ((data: any, conn?: DataConnection) => void)>;

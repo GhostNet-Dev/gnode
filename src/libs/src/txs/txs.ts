@@ -1,4 +1,3 @@
-import { Level } from "level";
 import { createHash, createSign, createVerify } from "crypto";
 import { Transaction, UTXO } from "./txtypes";
 import { logger } from "@GBlibs/logger/logger";

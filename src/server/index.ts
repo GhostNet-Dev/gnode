@@ -11,6 +11,8 @@ import BootFactory from '@Commons/bootfactory';
 import { logger } from '@GBlibs/logger/logger';
 import { WebSocket, WebSocketServer } from 'ws';
 import { NetAdapter } from './netadpater';
+import { Block } from '@GBlibs/blocks/blocktypes';
+import { Transaction, UTXO } from '@GBlibs/txs/txtypes';
 
 export const PORT = 3000;
 const mime = new Mime()
@@ -112,6 +114,23 @@ const g_handler: Handler = {
     },
     [RouteType.PeerStart]: async (ws: any) => {
         factory.route.NetStart(new NetAdapter(ws, g_handler))
+    },
+    [RouteType.DbGetReq]: async (ws: any, id: string, dbname: string, key: string) => {
+        const ret = await factory.route.getDBValue<any>(dbname, key)
+        ws.send(JSON.stringify({ types: RouteType.DbRes, params: { id: id, res: ret } }));
+    },
+    [RouteType.DbPutReq]: async (ws: any, id: string, dbname: string, key: string, value: any) => {
+        const ret = await factory.route.putDBValue<any>(dbname, key, value)
+        ws.send(JSON.stringify({ types: RouteType.DbRes, params: { id: id, res: ret } }));
+    },
+    [RouteType.DbDelReq]: async (ws: any, id: string, dbname: string, key: string) => {
+        const ret = await factory.route.delDBValue<any>(dbname, key)
+        ws.send(JSON.stringify({ types: RouteType.DbRes, params: { id: id, res: ret } }));
+    },
+    [RouteType.DbIterReq]: async (ws: any, id: string, dbname: string, chunkSize: number) => {
+        factory.route.streamDBChunks<any>(dbname, chunkSize, (chunk, done) => {
+            ws.send(JSON.stringify({ types: RouteType.DbIterChunk, params: { id, chunk, done } }));
+        })
     },
 }
 wss.on("connection", (ws: WebSocket) => {

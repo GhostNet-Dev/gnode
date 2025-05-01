@@ -1,5 +1,5 @@
+import { IDBManager, IGenericDB } from "@GBlibs/db/dbtypes";
 import { logger } from "@GBlibs/logger/logger";
-import { Level } from "level";
 
 export interface Validator {
     id: string;
@@ -7,14 +7,17 @@ export interface Validator {
     stake: number;
     joinedAt: string;
 }
-// ✅ Validator 저장용 LevelDB
-const validatorDB = new Level<string, Validator[]>("./validator-db", { valueEncoding: "json" });
-const voteDB = new Level<string, string[]>("./vote-db", { valueEncoding: "json" });
-
 export default class ValidatorManager {
+    validatorDB: IGenericDB<Validator[]>
+    voteDB: IGenericDB<string[]>
     private validators: Validator[] = [];
 
-    constructor(private url: string = "https://ghostwebservice.com") { 
+    constructor(
+        private dbMgr: IDBManager,
+        private url: string = "https://ghostwebservice.com", 
+    ) { 
+        this.validatorDB = this.dbMgr.getDB<Validator[]>("validator-db");
+        this.voteDB = this.dbMgr.getDB<string[]>("vote-db");
         this.loadValidators();
     }
 
@@ -41,7 +44,9 @@ export default class ValidatorManager {
             logger.error(`Failed to fetch validators: ${error}`);
         }
         try {
-            this.validators = await validatorDB.get("validators");
+            const valid = await this.validatorDB.get("validators");
+            if(valid) this.validators = valid
+            else throw new Error("Failed to load validators from LevelDB");
         } catch (error) {
             throw new Error("Failed to load validators from LevelDB");
         }
@@ -51,7 +56,7 @@ export default class ValidatorManager {
     // ✅ Validator 목록 저장
     async saveValidators(): Promise<void> {
         logger.info(`✅ Validator 목록 저장: ${this.validators.length} -> ${this.validators.map(v => v.publicKey)}`);
-        await validatorDB.put("validators", this.validators);
+        await this.validatorDB.put("validators", this.validators);
     }
 
     // ✅ Validator 목록 조회
@@ -90,7 +95,7 @@ export default class ValidatorManager {
         const votes = await this.loadVotes(blockHash);
         if (!votes.includes(validator)) {
             votes.push(validator);
-            await voteDB.put(blockHash, votes);
+            await this.voteDB.put(blockHash, votes);
             logger.info(`✅ ${validator}가 블록(${blockHash})에 투표함.`);
         }
     }
@@ -98,7 +103,9 @@ export default class ValidatorManager {
     // ✅ 특정 블록의 투표 내역 조회
     async loadVotes(blockHash: string): Promise<string[]> {
         try {
-            return await voteDB.get(blockHash);
+            const votes = await this.voteDB.get(blockHash);
+            if(votes) return votes;
+            else return [];
         } catch (error) {
             return [];
         }

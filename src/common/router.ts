@@ -5,18 +5,16 @@ import crypto from "crypto"
 import BlockChainFactory from "./bcfactory";
 import { AccountData, NetData } from "src/types/infotypes";
 import { logger } from "@GBlibs/logger/logger";
-import { Handler } from "./icom";
-import { NetAdapter } from "src/server/netadpater";
-import { WebSocket } from "ws";
 import { NetworkInterface } from "@GBlibs/network/inetwork";
+import { IDBManager } from "@GBlibs/db/dbtypes";
 
 export default class AppRoutes {
     secret = ""
-    bcFab?: BlockChainFactory
     net?: NetworkInterface
     constructor(
         private keyMaker: KeyMaker,
         private session: SessionServer,
+        private dbMgr: IDBManager,
     ) {
     }
     async LoadKeys(id: string, pass: string) {
@@ -30,7 +28,7 @@ export default class AppRoutes {
     }
     async NetStart(net: NetworkInterface) {
         this.net = net
-        this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr, this.net)
+        //this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr, this.net)
     }
     async Login(id: string, pass: string) {
         const ret = await this.keyMaker.Login(id, pass)
@@ -46,30 +44,30 @@ export default class AppRoutes {
 
         const ret = this.session.verifyToken(token, this.secret)
         if(ret != null && this.keyMaker.id == ret) {
-            this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr, this.net)
+            //this.bcFab = new BlockChainFactory(this.keyMaker, this.keyMaker.kmgr, this.net)
         }
         return { ret, addr: this.keyMaker.GetBase58PubKey() }
     }
     async GetBlockInfo() {
-        if(!this.bcFab) return 
-        const latest = await this.bcFab.blocks.getLatestBlock()
-        if(!latest) throw new Error("there is no block")
-        const ret: BlockInfo = {
-            height: latest.index,
-            txsCount: latest.transactions.length,
-            latestBlockHash: latest.hash,
-        }
-        return ret
+        // /if(!this.bcFab) return 
+        // const latest = await this.bcFab.blocks.getLatestBlock()
+        // if(!latest) throw new Error("there is no block")
+        // const ret: BlockInfo = {
+        //     height: latest.index,
+        //     txsCount: latest.transactions.length,
+        //     latestBlockHash: latest.hash,
+        // }
+        // return ret
     }
     async GetBlockList(height: number, count: number) {
-        if(!this.bcFab) return []
-        const start = height - count
+        // if(!this.bcFab) return []
+        // const start = height - count
 
-        const ret = await Promise.all(
-            Array.from({ length: count }, (_, i) => this.bcFab!.blocks.getBlock(start + i))
-        )
+        // const ret = await Promise.all(
+        //     Array.from({ length: count }, (_, i) => this.bcFab!.blocks.getBlock(start + i))
+        // )
 
-        return ret
+        // return ret
     }
     async GetAccountInfo(token: string) {
         const ret = this.session.verifyToken(token, this.secret)
@@ -84,23 +82,65 @@ export default class AppRoutes {
         return undefined
     }
     async GetBlock(year: number, month: number, day: number) {
-        if(!this.bcFab) return
-        const ret = await this.bcFab.blockState.getBlocksForDateGrouped(year, month, day)
-        if(Object.keys(ret).length == 0)  {
-            const timeKey = `${year}-${month}-${day}`;
-            ret[timeKey] = []
-        }
-        return ret
+        // if(!this.bcFab) return
+        // const ret = await this.bcFab.blockState.getBlocksForDateGrouped(year, month, day)
+        // if(Object.keys(ret).length == 0)  {
+        //     const timeKey = `${year}-${month}-${day}`;
+        //     ret[timeKey] = []
+        // }
+        // return ret
     }
-    GetNetInfo(): NetData | undefined { 
-        if(!this.bcFab) return 
-        let peerAddrs:string[] = []
-        return { 
-            peerAddrs,
-            validators: this.bcFab.valid.getValidators()
-        }
+    GetNetInfo() { 
+        // if(!this.bcFab) return 
+        // let peerAddrs:string[] = []
+        // return { 
+        //     peerAddrs,
+        //     validators: this.bcFab.valid.getValidators()
+        // }
     }
     GetLogs() {
         return logger.getBuffer()
+    }
+    async streamDBChunks<T>(
+        dbname: string,
+        chunkSize: number,
+        onChunk: (chunk: [string, T][], done: boolean) => void
+    ) {
+        const db = this.dbMgr.getDB<T>(dbname);
+        const iterator = db.iterator();
+        let chunk: [string, T][] = [];
+
+        for await (const [key, value] of iterator) {
+            chunk.push([key, value]);
+            if (chunk.length >= chunkSize) {
+                onChunk(chunk, false);
+                chunk = [];
+            }
+        }
+
+        // 마지막 chunk 처리
+        onChunk(chunk, true);
+    }
+    async getDBValue<T>(
+        dbname: string,
+        key: string
+    ): Promise<T | undefined> {
+        const db = this.dbMgr.getDB<T>(dbname);
+        return await db.get(key);
+    }
+    async putDBValue<T>(
+        dbname: string,
+        key: string,
+        value: T
+    ): Promise<void> {
+        const db = this.dbMgr.getDB<T>(dbname);
+        await db.put(key, value);
+    }
+    async delDBValue<T>(
+        dbname: string,
+        key: string
+    ): Promise<void> {
+        const db = this.dbMgr.getDB<T>(dbname);
+        await db.del(key);
     }
 }

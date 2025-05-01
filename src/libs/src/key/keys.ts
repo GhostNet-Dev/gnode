@@ -1,16 +1,19 @@
 import { createPrivateKey, createPublicKey, generateKeyPairSync, createSign, createVerify } from "crypto";
-import { Level } from "level";
 import crypto from "crypto";
 import { ec as EC } from "elliptic"
 import bs58check from "bs58check"
 import { logger } from "@GBlibs/logger/logger";
+import { IDBManager, IGenericDB } from "@GBlibs/db/dbtypes";
 
-// ✅ 키 저장용 LevelDB
-const keyDB = new Level<string, string>("./key-db", { valueEncoding: "utf-8" });
 
 export default class KeyManager {
+  private keyDB: IGenericDB<string>
   ec = new EC("secp256k1")
-  constructor() { }
+  constructor(
+    dbMgr: IDBManager
+  ) { 
+    this.keyDB = dbMgr.getDB<string>("key-db");
+  }
 
   /**
    * ✅ ECDSA 개인키 및 공개키 생성
@@ -74,12 +77,12 @@ export default class KeyManager {
   }
   // const db = new Level<string, string>("path-to-db");
   async putIfAbsent(key: string, value: string): Promise<boolean> {
-    const existing = await keyDB.get(key);
+    const existing = await this.keyDB.get(key);
     if (existing !== undefined && existing !== null) {
       logger.info(`⚠️ 키 '${key}'는 이미 존재합니다. 저장하지 않음.`);
       return false;
     }
-    await keyDB.put(key, value);
+    await this.keyDB.put(key, value);
     logger.info(`✅ 키 '${key}'가 존재하지 않아 저장되었습니다.`);
     return true;
   }
@@ -88,7 +91,7 @@ export default class KeyManager {
    */
   async listAllKeysWithValues(): Promise<{ key: string; value: string }[]> {
     const result: { key: string; value: string }[] = [];
-    for await (const [key, value] of keyDB.iterator()) {
+    for await (const [key, value] of this.keyDB.iterator()) {
       if(key.endsWith(":public")) {
         const id = key.split(":")[0]
         const pubKey = this.pemToBitcoinAddress(value)
@@ -166,7 +169,9 @@ export default class KeyManager {
    */
   async getPublicKey(id: string): Promise<string | null> {
     try {
-      return await keyDB.get(`${id}:public`);
+      const ret = await this.keyDB.get(`${id}:public`);
+      if(ret) return ret;
+      else return null;
     } catch {
       return null;
     }
@@ -177,8 +182,9 @@ export default class KeyManager {
    */
   async getPrivateKey(id: string, password: string): Promise<string | null> {
     try {
-      const encryptedKey = await keyDB.get(`${id}:private`);
-      return this.decryptPrivateKey(encryptedKey, password);
+      const encryptedKey = await this.keyDB.get(`${id}:private`);
+      if (encryptedKey) return this.decryptPrivateKey(encryptedKey, password);
+      return null
     } catch {
       return null;
     }

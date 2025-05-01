@@ -1,11 +1,9 @@
-import RendererFactory from "./factory";
 import { Base } from "@Webs/views/base";
+import BootRenderFactory from "./bootfactory";
 
-const fab = new RendererFactory()
+const fab = new BootRenderFactory()
 
 const start = async () => {
-    await fab.Initialize()
-
     const base = new Base("./", fab.Build())
     base.includeHTML("header", "navbar.html");
     // base.includeHTML("footer", "foot.html");

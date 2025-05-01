@@ -1,15 +1,17 @@
-import { Level } from "level";
 import { Transaction } from "./txtypes";
 import { logger } from "@GBlibs/logger/logger";
+import { IDBManager, IGenericDB } from "@GBlibs/db/dbtypes";
 
 /**
  * ✅ Pending 트랜잭션을 관리하는 Pool
  */
 export default class PendingTransactionPool {
-  private pendingDB: Level<string, Transaction>;
+  private pendingDB: IGenericDB<Transaction>;
 
-  constructor() {
-    this.pendingDB = new Level<string, Transaction>("./pending-tx-db", { valueEncoding: "json" });
+  constructor(
+    private dbMgr: IDBManager
+  ) {
+    this.pendingDB = this.dbMgr.getDB<Transaction>("pending-tx-db");
   }
 
   /**
