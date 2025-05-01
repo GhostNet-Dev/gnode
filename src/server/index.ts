@@ -88,32 +88,13 @@ const g_handler: Handler = {
         const ret = await factory.route.SessionCheck(token)
         ws.send(JSON.stringify({ types: RouteType.SessionCheckRes, params: ret }));
     },
-    [RouteType.BlockInfoReq]: async (ws: any) => {
-        const ret = await factory.route.GetBlockInfo()
-        ws.send(JSON.stringify({ types: RouteType.BlockInfoRes, params: ret }));
-    },
-    [RouteType.BlockListReq]: async (ws: any, height: number, count: number) => {
-        const ret = await factory.route.GetBlockList(height, count)
-        ws.send(JSON.stringify({ types: RouteType.BlockListRes, params: ret }));
-    },
     [RouteType.AccountInfoReq]: async (ws: any, token: string) => {
         const ret = await factory.route.GetAccountInfo(token)
         ws.send(JSON.stringify({ types: RouteType.AccountInfoRes, params: ret }));
     },
-    [RouteType.GetBlockReq]: async (ws: any, year:number, month:number, day:number) => {
-        const ret = await factory.route.GetBlock(year, month, day)
-        ws.send(JSON.stringify({ types: RouteType.GetBlockRes, params: ret }));
-    },
-    [RouteType.GetNetInfoReq]: async (ws: any) => {
-        const ret = await factory.route.GetNetInfo()
-        ws.send(JSON.stringify({ types: RouteType.GetNetInfoRes, params: ret }));
-    },
     [RouteType.GetLogsReq]: async (ws: any) => {
         const ret = await factory.route.GetLogs()
         ws.send(JSON.stringify({ types: RouteType.GetLogsRes, params: ret }));
-    },
-    [RouteType.PeerStart]: async (ws: any) => {
-        factory.route.NetStart(new NetAdapter(ws, g_handler))
     },
     [RouteType.DbGetReq]: async (ws: any, id: string, dbname: string, key: string) => {
         const ret = await factory.route.getDBValue<any>(dbname, key)

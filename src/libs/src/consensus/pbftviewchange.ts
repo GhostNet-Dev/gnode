@@ -1,5 +1,5 @@
 import { logger } from "@GBlibs/logger/logger";
-import { NetworkInterface } from "@GBlibs/network/inetwork";
+import { INetworkInterface } from "@GBlibs/network/inetwork";
 import { Validator } from "./validators";
 
 export default class PBFTViewChange {
@@ -9,7 +9,7 @@ export default class PBFTViewChange {
   timeoutCount: { [key: string]: number };
 
   constructor(
-    private pbftNetwork: NetworkInterface,
+    private pbftNetwork: INetworkInterface,
     private nodes: Validator[],
     currentPrimary: Validator,
     currentView: number = 0,

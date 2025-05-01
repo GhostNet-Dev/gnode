@@ -1,9 +1,9 @@
 import { Handler } from "@Commons/icom";
-import { NetworkInterface } from "../libs/src/network/inetwork";
+import { INetworkInterface } from "../libs/src/network/inetwork";
 import { RouteType } from "../types/routetypes";
 import { WebSocket } from "ws";
 
-export class NetAdapter implements NetworkInterface {
+export class NetAdapter implements INetworkInterface {
     get Peers(): string[] { return [] }
 
     private eventListeners = new Map<string, ((data: any) => void)[]>;

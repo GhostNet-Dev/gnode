@@ -8,6 +8,7 @@ import {
 import { RouteType } from "../../types/routetypes";
 import Sessions from "@Webs/sessions/session";
 import { Block } from "@GBlibs/blocks/blocktypes";
+import BlockStats from "@GBlibs/blocks/blockstate";
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Title, CategoryScale, Tooltip, Filler);
 
@@ -15,31 +16,29 @@ export default class Mining extends Card implements IPage {
     private chart?: Chart;
     private blockData: { date: string, count: number }[] = [];
 
-    constructor(private ch: IChannel, private sess: Sessions) {
+    constructor(private ch: IChannel, private sess: Sessions, private blockStats: BlockStats) {
         super("html/mining.html", "mininginfo", "Mining Statics");
-
-        // 날짜별 블록 수 수신 핸들러
-        this.ch.RegisterMsgHandler(RouteType.GetBlockRes, (data: Record<string, Block[]>) => {
-            const dateStr = Object.keys(data)[0];
-            const count = data[dateStr]?.length ?? 0;
-            this.blockData.push({ date: dateStr, count });
-
-            if (this.blockData.length === 7) {
-                // 날짜 오름차순 정렬
-                this.blockData.sort((a, b) => a.date.localeCompare(b.date));
-                this.updateChart(this.blockData);
-            }
-        });
     }
+    MakeChart(data: Record<string, Block[]>) {
+        const dateStr = Object.keys(data)[0];
+        const count = data[dateStr]?.length ?? 0;
+        this.blockData.push({ date: dateStr, count });
 
-    Release(): void {
-        if (this.chart) {
-            this.chart.destroy();
-            this.chart = undefined;
+        if (this.blockData.length === 7) {
+            // 날짜 오름차순 정렬
+            this.blockData.sort((a, b) => a.date.localeCompare(b.date));
+            this.updateChart(this.blockData);
         }
     }
-
-    async Run(): Promise<boolean> {
+    async GetBlock(year: number, month: number, day: number) {
+        const ret = await this.blockStats.getBlocksForDateGrouped(year, month, day)
+        if(Object.keys(ret).length == 0)  {
+            const timeKey = `${year}-${month}-${day}`;
+            ret[timeKey] = []
+        }
+        return ret
+    }
+    drawChart() {
         this.blockData = [];
         const today = new Date();
 
@@ -55,8 +54,19 @@ export default class Mining extends Card implements IPage {
                 token: this.sess.getToken()
             };
 
-            this.ch.SendMsg(RouteType.GetBlockReq, d.year, d.month, d.day, d.token);
+            this.GetBlock(d.year, d.month, d.day);
         }
+    }
+
+    Release(): void {
+        if (this.chart) {
+            this.chart.destroy();
+            this.chart = undefined;
+        }
+    }
+
+    async Run(): Promise<boolean> {
+        this.drawChart()
 
         return false;
     }

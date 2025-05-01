@@ -7,7 +7,7 @@ import Blockchain from "./blockchain";
 import KeyManager from "@GBlibs/key/keys";
 import KeyMaker from "./keymaker";
 import BlockStats from "@GBlibs/blocks/blockstate";
-import { NetworkInterface } from "@GBlibs/network/inetwork";
+import { INetworkInterface } from "@GBlibs/network/inetwork";
 import { IChannel } from "./icom";
 import { DBAdapterManager } from "./dbmadapter";
 
@@ -26,7 +26,7 @@ export default class BlockChainFactory {
     blockChain: Blockchain
 
     constructor(
-        private net: NetworkInterface,
+        private net: INetworkInterface,
         private ch: IChannel,
     ) {
 

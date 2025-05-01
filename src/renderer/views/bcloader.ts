@@ -34,10 +34,10 @@ export default class BCLoader extends Page implements IPage {
         const bcfab = new BlockChainFactory(this.net.net!, this.channel)
 
         const cardMap: CardMap = {
-            "bcinfo": new BcInfo(this.channel),
-            "mininginfo":  new Mining(this.channel, this.session),
+            "bcinfo": new BcInfo(bcfab.blocks),
+            "mininginfo":  new Mining(this.channel, this.session, bcfab.blockState),
             "accinfo": new AccountInfo(this.channel, this.session),
-            "netinfo": new NetInfo(this.channel, this.session, this.net),
+            "netinfo": new NetInfo(this.session, this.net.net!, bcfab.valid),
             "loginfo":  new LogCard(this.channel, this.session),
         };
         return cardMap;

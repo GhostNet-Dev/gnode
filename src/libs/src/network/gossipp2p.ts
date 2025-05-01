@@ -2,12 +2,12 @@ import Peer, { DataConnection } from "peerjs";
 import { v4 as uuidv4 } from "uuid";
 import DHTPeer from "./dhtpeer";
 import { GPType, GPacket } from "./packet";
-import { NetworkInterface } from "./inetwork";
+import { INetworkInterface } from "./inetwork";
 
 /**
  * PeerJS 기반 Gossip Protocol (PBFT NetworkInterface 호환)
  */
-export default class GossipP2P implements NetworkInterface {
+export default class GossipP2P implements INetworkInterface {
   peer: Peer;
   peers: Map<string, DataConnection>;
   private receivedMessages: Set<string>; // 중복 메시지 방지

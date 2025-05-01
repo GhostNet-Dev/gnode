@@ -1,25 +1,35 @@
-import { IChannel } from "@Commons/icom";
 import Card from "@Webs/views/card";
 import { IPage } from "@Webs/views/page";
-import { AccountData, NetData } from "../../types/infotypes";
-import { RouteType } from "../../types/routetypes";
+import { NetData } from "../../types/infotypes";
 import Sessions from "@Webs/sessions/session";
-import { RendererNet } from "@Commons/renderernet";
+import ValidatorManager from "@GBlibs/consensus/validators";
+import { INetworkInterface } from "@GBlibs/network/inetwork";
 
 export default class NetInfo extends Card implements IPage {
-    constructor(private ch: IChannel, private sess: Sessions, net: RendererNet) {
+    constructor(
+        private sess: Sessions, 
+        private net: INetworkInterface, 
+        private valid: ValidatorManager
+    ) {
         super("html/netinfo.html", "netinfo", "Network Infomation")
-        ch.RegisterMsgHandler(RouteType.GetNetInfoRes, (info: NetData) => {
-            const domNodeCnt = document.getElementById("nodecount")
-            if (domNodeCnt) domNodeCnt.innerText = net.net!.Peers.length.toString()
-            const domValidators = document.getElementById("validatorlist")
-            if(domValidators) domValidators.innerHTML = info.validators.map((v) => v.publicKey).join("<br>")   
-        })
+    }
+    drawValidators(info: NetData) {
+        const domNodeCnt = document.getElementById("nodecount")
+        if (domNodeCnt) domNodeCnt.innerText = this.net.Peers.length.toString()
+        const domValidators = document.getElementById("validatorlist")
+        if (domValidators) domValidators.innerHTML = info.validators.map((v) => v.publicKey).join("<br>")
+    }
+    GetNetInfo() { 
+        let peerAddrs:string[] = []
+        return { 
+            peerAddrs,
+            validators: this.valid.getValidators()
+        }
     }
     Release(): void {
     }
     async Run(): Promise<boolean> {
-        this.ch.SendMsg(RouteType.GetNetInfoReq)
+        this.drawValidators(this.GetNetInfo())
         return false
     }
 }

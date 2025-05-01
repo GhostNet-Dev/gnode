@@ -3,7 +3,7 @@ import ValidatorManager, { Validator } from "./validators";
 import BlockManager from "@GBlibs/blocks/blocks";
 import TransactionManager from "@GBlibs/txs/txs";
 import { Block } from "@GBlibs/blocks/blocktypes";
-import { NetworkInterface } from "@GBlibs/network/inetwork";
+import { INetworkInterface } from "@GBlibs/network/inetwork";
 import { logger } from "@GBlibs/logger/logger";
 
 export default class PBFTConsensus {
@@ -18,7 +18,7 @@ export default class PBFTConsensus {
     validatorManager: ValidatorManager,
     blockManager: BlockManager,
     txManager: TransactionManager,
-    private pbftNetwork: NetworkInterface
+    private pbftNetwork: INetworkInterface
   ) {
     this.validatorManager = validatorManager;
     this.blockManager = blockManager;

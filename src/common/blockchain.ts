@@ -4,7 +4,7 @@ import PBFTConsensus from "@GBlibs/consensus/pbftconsensus";
 import ValidatorManager from "@GBlibs/consensus/validators";
 import KeyManager from "@GBlibs/key/keys";
 import { logger } from "@GBlibs/logger/logger";
-import { NetworkInterface } from "@GBlibs/network/inetwork";
+import { INetworkInterface } from "@GBlibs/network/inetwork";
 import PendingTransactionPool from "@GBlibs/txs/pendingtxs";
 import TransactionManager from "@GBlibs/txs/txs";
 import { Transaction } from "@GBlibs/txs/txtypes";
@@ -18,14 +18,14 @@ export default class Blockchain {
   private txManager: TransactionManager;
   private pendingPool: PendingTransactionPool;
   private keyManager: KeyManager;
-  private network: NetworkInterface;
+  private network: INetworkInterface;
   private minTxPerBlock: number = 1;
 
   constructor(
     blockManager: BlockManager,
     txManager: TransactionManager,
     pbft: PBFTConsensus,
-    network: NetworkInterface,
+    network: INetworkInterface,
     pendingPool: PendingTransactionPool,
     keyManager: KeyManager
   ) {
