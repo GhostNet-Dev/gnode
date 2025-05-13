@@ -5,7 +5,7 @@ const fab = new BootRenderFactory()
 
 const start = async () => {
     const base = new Base("./", fab.Build())
-    base.includeHTML("header", "navbar.html");
+    await base.includeHTML("header", "navbar.html");
     // base.includeHTML("footer", "foot.html");
     base.includeContentHTML()
     window.ClickLoadPage = (key: string, fromEvent: boolean, ...args: string[]) => {

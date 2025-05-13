@@ -1,81 +1,137 @@
-import { createPrivateKey, createPublicKey, generateKeyPairSync, createSign, createVerify } from "crypto";
-import crypto from "crypto";
-import { ec as EC } from "elliptic"
-import bs58check from "bs58check"
-import { logger } from "@GBlibs/logger/logger";
+// KeyManager.ts (Web 환경 호환)
 import { IDBManager, IGenericDB } from "@GBlibs/db/dbtypes";
-
+import { logger } from "@GBlibs/logger/logger";
+import { WebCryptoProvider } from "./webcrypto";
+import hash from "hash.js";
+import bs58 from "bs58";
 
 export default class KeyManager {
   private keyDB: IGenericDB<string>
-  ec = new EC("secp256k1")
+
   constructor(
-    dbMgr: IDBManager
-  ) { 
+    dbMgr: IDBManager,
+    private crypto: WebCryptoProvider
+  ) {
     this.keyDB = dbMgr.getDB<string>("key-db");
+    this.keyDB.open();
   }
 
-  /**
-   * ✅ ECDSA 개인키 및 공개키 생성
-   */
-  generateKeyPair(): { privateKey: string; publicKey: string } {
-    const { privateKey, publicKey } = generateKeyPairSync("ec", {
-      namedCurve: "secp256k1",
-      privateKeyEncoding: { format: "pem", type: "pkcs8" },
-      publicKeyEncoding: { format: "pem", type: "spki" },
-    });
-
-    logger.info("🔑 개인키 및 공개키 생성 완료");
-    return { privateKey, publicKey };
-  }
-  /**
-   * ✅ PEM 형식의 개인키로부터 공개키 파생
-   */
-  derivePublicKeyFromPrivateKey(privateKeyPem: string): string {
-    const privateKeyObj = createPrivateKey({
-      key: privateKeyPem,
-      format: "pem",
-      type: "pkcs8",
-    });
-
-    const publicKeyObj = createPublicKey(privateKeyObj);
-
-    return publicKeyObj.export({
-      type: "spki",
-      format: "pem",
-    }) as string;
+  async generateKeyPair(): Promise<{ privateKey: string; publicKey: string }> {
+    return await this.crypto.generateKeyPair();
   }
 
-  /**
-   * ✅ 비밀번호 기반 AES-256 개인키 암호화
-   */
-  encryptPrivateKey(privateKey: string, password: string): string {
-    const key = crypto.scryptSync(password, "salt", 32);
-    const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv("aes-256-cbc", key, iv);
-    let encrypted = cipher.update(privateKey, "utf-8", "hex");
-    encrypted += cipher.final("hex");
-    return `${iv.toString("hex")}:${encrypted}`;
+  async derivePublicKeyFromPrivateKey(privateKeyPem: string): Promise<string> {
+    // 1. PEM → ArrayBuffer
+    const keyBuffer = this.crypto.pemToArrayBuffer(privateKeyPem); // <- 구현된 함수
+
+    // 2. Import privateKey (must be extractable!)
+    const privateKey = await crypto.subtle.importKey(
+      "pkcs8",
+      keyBuffer,
+      { name: "ECDSA", namedCurve: "P-256" },
+      true, // ✅ 반드시 extractable: true
+      ["sign"]
+    );
+
+    // 3. Export to JWK (JSON Web Key)
+    const jwk = await crypto.subtle.exportKey("jwk", privateKey);
+
+    // 4. Remove private key material (d) & set correct key_ops
+    delete jwk.d;
+    jwk.key_ops = ["verify"];
+
+    // 5. Import as public key
+    const publicKey = await crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      { name: "ECDSA", namedCurve: "P-256" },
+      true,
+      ["verify"]
+    );
+
+    // 6. Export public key as SPKI
+    const spki = await crypto.subtle.exportKey("spki", publicKey);
+
+    // 7. Return as PEM
+    return this.crypto.arrayBufferToPem(spki, "PUBLIC KEY");
   }
 
-  /**
-   * ✅ 비밀번호 기반 AES-256 개인키 복호화
-   */
-  decryptPrivateKey(encryptedKey: string, password: string): string | null {
+
+
+  async encryptPrivateKey(privateKey: string, password: string): Promise<string> {
+    const enc = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      enc.encode(password),
+      { name: "PBKDF2" },
+      false,
+      ["deriveKey"]
+    );
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    const aesKey = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: 100000,
+        hash: "SHA-256",
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt"]
+    );
+
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      aesKey,
+      enc.encode(privateKey)
+    );
+
+    return `${Buffer.from(salt).toString("base64")}:${Buffer.from(iv).toString("base64")}:${Buffer.from(ciphertext).toString("base64")}`;
+  }
+
+  async decryptPrivateKey(encrypted: string, password: string): Promise<string | null> {
     try {
-      const key = crypto.scryptSync(password, "salt", 32);
-      const [ivHex, encryptedData] = encryptedKey.split(":");
-      const iv = Buffer.from(ivHex, "hex");
-      const decipher = crypto.createDecipheriv("aes-256-cbc", key, iv);
-      let decrypted = decipher.update(encryptedData, "hex", "utf-8");
-      decrypted += decipher.final("utf-8");
-      return decrypted;
-    } catch (error) {
-      logger.error("❌ 잘못된 비밀번호! 개인키 복호화 실패");
+      const [saltB64, ivB64, dataB64] = encrypted.split(":");
+      const salt = Uint8Array.from(atob(saltB64), c => c.charCodeAt(0));
+      const iv = Uint8Array.from(atob(ivB64), c => c.charCodeAt(0));
+      const data = Uint8Array.from(atob(dataB64), c => c.charCodeAt(0));
+
+      const keyMaterial = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(password),
+        { name: "PBKDF2" },
+        false,
+        ["deriveKey"]
+      );
+
+      const aesKey = await crypto.subtle.deriveKey(
+        {
+          name: "PBKDF2",
+          salt,
+          iterations: 100000,
+          hash: "SHA-256",
+        },
+        keyMaterial,
+        { name: "AES-GCM", length: 256 },
+        false,
+        ["decrypt"]
+      );
+
+      const decrypted = await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv },
+        aesKey,
+        data
+      );
+      return new TextDecoder().decode(decrypted);
+    } catch (e) {
+      logger.error("❌ 복호화 실패:", e);
       return null;
     }
   }
-  // const db = new Level<string, string>("path-to-db");
+
   async putIfAbsent(key: string, value: string): Promise<boolean> {
     const existing = await this.keyDB.get(key);
     if (existing !== undefined && existing !== null) {
@@ -86,140 +142,99 @@ export default class KeyManager {
     logger.info(`✅ 키 '${key}'가 존재하지 않아 저장되었습니다.`);
     return true;
   }
-  /**
-   * ✅ 저장된 모든 키와 해당 값 리스트 반환
-   */
-  async listAllKeysWithValues(): Promise<{ key: string; value: string }[]> {
-    const result: { key: string; value: string }[] = [];
-    for await (const [key, value] of this.keyDB.iterator()) {
-      if(key.endsWith(":public")) {
-        const id = key.split(":")[0]
-        const pubKey = this.pemToBitcoinAddress(value)
-        result.push({ key: id, value: pubKey });
-        logger.info(id, value)
-      }
-    }
-    return result;
-  }
-  pemToBitcoinAddress(pem: string): string {
-    // 1. PEM → 키 객체
-    const keyObject = createPublicKey({
-      key: pem,
-      format: "pem",
-      type: "spki"
-    });
 
-    // 2. DER Buffer 가져오기
-    const der = keyObject.export({ format: "der", type: "spki" }) as Buffer;
-
-    // 3. elliptic 으로 공개키 객체 파싱
-    const pubKeyPoint = this.ec.keyFromPublic(der.slice(-65), "hex").getPublic();
-
-    // 4. 압축 공개키 (33바이트, hex)
-    const compressedPubKey = pubKeyPoint.encodeCompressed("hex"); // or uncompressed
-
-    // 5. 공개키 → SHA256 → RIPEMD160
-    const sha256 = crypto.createHash("sha256").update(Buffer.from(compressedPubKey, "hex")).digest();
-    const pubKeyHash = crypto.createHash("ripemd160").update(sha256).digest();
-
-    // 6. 버전 바이트 붙이기 (P2PKH: 0x00 for mainnet)
-    const payload: Uint8Array = Buffer.concat([Buffer.from([0x00]), pubKeyHash]);
-
-    // 7. Base58Check 인코딩 → Bitcoin 주소
-    const address = bs58check.encode(payload);
-    return address;
-  }
-  deriveBitcoinPublicKeyHex(privateKeyPem: string, compressed = true): string {
-      // 1. 개인키 객체 생성
-      const privateKeyObj = createPrivateKey({
-          key: privateKeyPem,
-          format: "pem",
-          type: "pkcs8",
-      });
-
-      // 2. DER에서 개인키 추출 (elliptic이 필요로 함)
-      const der = privateKeyObj.export({ format: "der", type: "pkcs8" }) as Buffer;
-
-      // 3. elliptic에 맞게 키 가져오기
-      // 개인키는 보통 DER 구조 끝에 있으므로 직접 파싱하거나 외부 라이브러리로 추출해야 합니다.
-      // 여기서는 예제를 간단히 하기 위해 PEM에서 hex 키를 바로 받았다고 가정합니다.
-
-      const keyPair = this.ec.keyFromPrivate(der.slice(-32)); // 32바이트 개인키 사용
-
-      // 4. 공개키 반환
-      return keyPair.getPublic(compressed, "hex");
-  }
-
-  /**
-   * ✅ 키 저장 (개인키는 비밀번호로 암호화)
-   */
   async saveKeyPair(id: string, password: string, privateKey: string, publicKey: string) {
-    const encryptedPrivateKey = this.encryptPrivateKey(privateKey, password);
-    if (!await this.putIfAbsent(`${id}:private`, encryptedPrivateKey)) {
-      return false
-    }
-    if (!await this.putIfAbsent(`${id}:public`, publicKey)) {
-      return false
-    }
+    const encryptedPrivateKey = await this.encryptPrivateKey(privateKey, password);
+    await this.putIfAbsent(`${id}:private`, encryptedPrivateKey);
+    await this.putIfAbsent(`${id}:public`, publicKey);
     logger.info(`✅ 키 저장 완료 (ID: ${id})`);
   }
 
-  /**
-   * ✅ 공개키 가져오기
-   */
   async getPublicKey(id: string): Promise<string | null> {
     try {
       const ret = await this.keyDB.get(`${id}:public`);
-      if(ret) return ret;
-      else return null;
+      return ret ?? null;
     } catch {
       return null;
     }
   }
 
-  /**
-   * ✅ 개인키 가져오기 (비밀번호 필요)
-   */
   async getPrivateKey(id: string, password: string): Promise<string | null> {
     try {
-      const encryptedKey = await this.keyDB.get(`${id}:private`);
-      if (encryptedKey) return this.decryptPrivateKey(encryptedKey, password);
-      return null
+      const encrypted = await this.keyDB.get(`${id}:private`);
+      if (!encrypted) return null;
+      return await this.decryptPrivateKey(encrypted, password);
     } catch {
       return null;
     }
   }
 
-  /**
-   * ✅ 개인키로 서명 생성 (비밀번호 필요)
-   */
-  async signData(id: string, data: string, password: string): Promise<string | null> {
-    const privateKey = await this.getPrivateKey(id, password);
+  async signData(id: string, data: string, password?: string): Promise<string | null> {
+    const privateKey = await this.getPrivateKey(id, password ?? "");
     if (!privateKey) {
-      logger.error(`❌ 개인키 없음 또는 복호화 실패 (ID: ${id})`);
+      logger.error(`❌ 개인키 없음 (ID: ${id})`);
       return null;
     }
-
-    const sign = createSign("SHA256");
-    sign.update(data);
-    sign.end();
-    return sign.sign(privateKey, "hex");
+    return await this.crypto.createSign(data, privateKey);
   }
 
-  /**
-   * ✅ 공개키로 서명 검증
-   */
   async verifySignature(id: string, data: string, signature: string): Promise<boolean> {
     const publicKey = await this.getPublicKey(id);
     if (!publicKey) {
       logger.error(`❌ 공개키 없음 (ID: ${id})`);
       return false;
     }
+    return await this.crypto.createVerify(data, signature, publicKey);
+  }
+  async listAllKeysWithValues(): Promise<{ key: string; value: string }[]> {
+    const result: { key: string; value: string }[] = [];
+    for await (const [key, value] of this.keyDB.iterator()) {
+      if (key.endsWith(":public")) {
+        const id = key.split(":")[0];
+        const address = await this.pemToBitcoinAddress(value);
+        result.push({ key: id, value: address });
+      }
+    }
+    return result;
+  }
 
-    const verify = createVerify("SHA256");
-    verify.update(data);
-    verify.end();
-    return verify.verify(publicKey, signature, "hex");
+
+  async pemToBitcoinAddress(pem: string): Promise<string> {
+    // 1. PEM → CryptoKey (SPKI)
+    const key = await crypto.subtle.importKey(
+      "spki",
+      this.crypto.pemToArrayBuffer(pem),
+      { name: "ECDSA", namedCurve: "P-256" }, // or "secp256k1" if WebCrypto supports it
+      true,
+      []
+    );
+
+    // 2. SPKI DER export
+    const spki = await crypto.subtle.exportKey("spki", key);
+
+    // 3. SHA-256
+    const hash1 = new Uint8Array(await crypto.subtle.digest("SHA-256", spki));
+
+    // 4. RIPEMD-160 (WebCrypto는 지원 안함 → hash.js 사용)
+    const ripemd160 = hash.ripemd160().update(Buffer.from(hash1)).digest();
+    const pubKeyHash = Uint8Array.from(ripemd160);
+
+    // 5. Add network prefix (0x00 = mainnet)
+    const payload = new Uint8Array(1 + pubKeyHash.length);
+    payload[0] = 0x00;
+    payload.set(pubKeyHash, 1);
+
+    // 6. Double SHA-256 for checksum
+    const checksum1 = new Uint8Array(await crypto.subtle.digest("SHA-256", payload));
+    const checksum2 = new Uint8Array(await crypto.subtle.digest("SHA-256", checksum1));
+    const checksum = checksum2.slice(0, 4);
+
+    // 7. Append checksum
+    const fullPayload = new Uint8Array(payload.length + 4);
+    fullPayload.set(payload);
+    fullPayload.set(checksum, payload.length);
+
+    // 8. Base58 인코딩
+    return bs58.encode(Buffer.from(fullPayload));
   }
 }
-

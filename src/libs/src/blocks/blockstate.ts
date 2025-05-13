@@ -48,7 +48,7 @@ export default class BlockStats {
       ) {
         // const hour = date.getHours().toString().padStart(2, '0');
         // const minute = date.getMinutes().toString().padStart(2, '0');
-        const timeKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        const timeKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${date.getDate()}`;
         logger.info(timeKey);
 
         if (!groupedBlocks[timeKey]) {

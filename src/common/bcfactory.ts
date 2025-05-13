@@ -10,6 +10,7 @@ import BlockStats from "@GBlibs/blocks/blockstate";
 import { INetworkInterface } from "@GBlibs/network/inetwork";
 import { IChannel } from "./icom";
 import { DBAdapterManager } from "./dbmadapter";
+import { WebCryptoProvider } from "@GBlibs/key/webcrypto";
 
 export default class BlockChainFactory {
     dbMgr: DBAdapterManager
@@ -29,13 +30,13 @@ export default class BlockChainFactory {
         private net: INetworkInterface,
         private ch: IChannel,
     ) {
-
+        const crypto = new WebCryptoProvider();
         this.dbMgr = new DBAdapterManager(this.ch);
-        this.keys = new KeyManager(this.dbMgr)
+        this.keys = new KeyManager(this.dbMgr, crypto)
         this.keyMaker = new KeyMaker(this.keys)
         this.valid = new ValidatorManager(this.dbMgr)
-        this.blocks = new BlockManager(this.valid, this.dbMgr)
-        this.txs = new TransactionManager(this.dbMgr)
+        this.blocks = new BlockManager(this.valid, this.dbMgr, crypto)
+        this.txs = new TransactionManager(this.dbMgr, crypto)
         this.pendingPool = new PendingTransactionPool(this.dbMgr)
         this.blockState = new BlockStats(this.dbMgr)
         /* Network */

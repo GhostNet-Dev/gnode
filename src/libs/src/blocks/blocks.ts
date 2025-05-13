@@ -1,17 +1,18 @@
 import { Transaction } from "@GBlibs/txs/txtypes";
 import { Block } from "./blocktypes";
-import crypto from "crypto";
 import TransactionManager from "@GBlibs/txs/txs";
 import ValidatorManager from "@GBlibs/consensus/validators";
 import { logger } from "@GBlibs/logger/logger";
 import { IDBManager, IGenericDB } from "@GBlibs/db/dbtypes";
+import { WebCryptoProvider } from "@GBlibs/key/webcrypto";
 
 export default class BlockManager {
   private blockDB: IGenericDB<Block>;
 
   constructor(
     private validatorMgr: ValidatorManager,
-    private dbMgr: IDBManager
+    private dbMgr: IDBManager,
+    private crypto: WebCryptoProvider // 추가
   ) {
     this.blockDB = this.dbMgr.getDB<Block>("block-db");
     this.initialize();
@@ -61,7 +62,7 @@ export default class BlockManager {
     const mediatorRewards = this.calculateMediatorRewards(transactions);
 
     // ✅ Coinbase 트랜잭션 생성
-    const coinbaseTransaction = this.createCoinbaseTransaction(mediatorRewards);
+    const coinbaseTransaction = await this.createCoinbaseTransaction(mediatorRewards);
 
     // 블록 내 트랜잭션 리스트 업데이트
     transactions.unshift(coinbaseTransaction);
@@ -77,14 +78,16 @@ export default class BlockManager {
       hash: "",
     };
 
-    newBlock.hash = this.calculateHash(newBlock);
+    newBlock.hash = await this.calculateHash(newBlock);
     return newBlock;
   }
 
   // ✅ 블록 해시 계산
-  calculateHash(block: Block): string {
-    return crypto.createHash("sha256").update(JSON.stringify(block)).digest("hex");
-  }
+  async calculateHash(block: Block): Promise<string> {
+  const data = JSON.stringify(block);
+  return await this.crypto.createHash(data); // WebCryptoProvider에서 SHA-256 문자열 반환
+}
+
 
   // ✅ 중계자의 거래 기여도에 따른 1000 코인 분배
   private calculateMediatorRewards(transactions: Transaction[]): { mediator: string; amount: number }[] {
@@ -106,7 +109,7 @@ export default class BlockManager {
   }
 
   // ✅ Coinbase 트랜잭션 생성
-  private createCoinbaseTransaction(mediatorRewards: { mediator: string; amount: number }[]): Transaction {
+  private async createCoinbaseTransaction(mediatorRewards: { mediator: string; amount: number }[]): Promise<Transaction> {
     // Coinbase 트랜잭션 데이터
     const transactionData: Omit<Transaction, "signature" | "txid"> = {
       inputs: [],
@@ -121,7 +124,8 @@ export default class BlockManager {
     };
 
     // ✅ Coinbase 트랜잭션 해시 생성 (블록 데이터 기반)
-    const txid = crypto.createHash("sha256").update(JSON.stringify(transactionData)).digest("hex");
+    const txid = await this.crypto.createHash(JSON.stringify(transactionData));
+
 
     return {
       ...transactionData,
@@ -152,7 +156,7 @@ export default class BlockManager {
       logger.error("❌ 오류: 이전 해시 불일치");
       return false;
     }
-    if (newBlock.hash !== this.calculateHash(newBlock)) {
+    if (newBlock.hash !== await this.calculateHash(newBlock)) {
       logger.error("❌ 오류: 블록 해시 불일치");
       return false;
     }

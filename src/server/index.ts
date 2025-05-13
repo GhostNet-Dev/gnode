@@ -123,6 +123,7 @@ wss.on("connection", (ws: WebSocket) => {
             logger.error("no handler", msg.types)
             return
         }
+        logger.info(msg)
         h(ws, ...msg.params);
     });
     ws.on("close", () => {

@@ -8,18 +8,18 @@ export default class KeyMaker {
     privKey?: string
     constructor(public kmgr: KeyManager) {
     }
-    GetBase58PubKey() {
+    async GetBase58PubKey() {
         if(!this.pubkey) throw new Error("there is no pubkey");
         
-        return this.kmgr.pemToBitcoinAddress(this.pubkey) 
+        return await this.kmgr.pemToBitcoinAddress(this.pubkey) 
     }
     
     async Login(id: string, pass: string) {
         const pubKey = await this.kmgr.getPublicKey(id)
         const privKey = await this.kmgr.getPrivateKey(id, pass)
-        if (privKey == null) return false
+        if (privKey == null || pubKey == null) return false
 
-        const newPub = this.kmgr.derivePublicKeyFromPrivateKey(privKey)
+        const newPub = await this.kmgr.derivePublicKeyFromPrivateKey(privKey)
         if(newPub === pubKey) {
             this.pubkey = pubKey
             this.id = id
@@ -35,7 +35,7 @@ export default class KeyMaker {
         return await this.kmgr.listAllKeysWithValues()
     }
     async MakeNewAccount(id: string, pass: string) {
-        const pair = this.kmgr.generateKeyPair()
+        const pair = await this.kmgr.generateKeyPair()
         const pubKey = pair.publicKey
         const pirvKey = this.kmgr.encryptPrivateKey(pair.privateKey, pass)
         const ret = await this.kmgr.saveKeyPair(id, pass, pair.privateKey, pair.publicKey)

@@ -11,6 +11,10 @@ type LogLevel = 'info' | 'warn' | 'error';
 
 const MAX_BUFFER_SIZE = 500;
 const logBuffer: LogBuffer[] = [];
+const isNode =
+  typeof process !== "undefined" &&
+  process.versions != null &&
+  process.versions.node != null;
 
 function getCallerLocation(): string {
   const stack = new Error().stack?.split('\n') || [];
@@ -78,19 +82,31 @@ function storeLog(msg: LogBuffer) {
 
 export const logger = {
   info: (...args: any[]) => {
-    const msg = formatMessage('info', args);
-    console.log(msg);
-    storeLog(rawMessage('info', args));
+    if (isNode) {
+      const msg = formatMessage('info', args);
+      console.log(msg);
+      storeLog(rawMessage('info', args));
+    } else {
+      console.log(...args);
+    }
   },
   warn: (...args: any[]) => {
-    const msg = formatMessage('warn', args);
-    console.warn(msg);
-    storeLog(rawMessage('warn', args));
+    if (isNode) {
+      const msg = formatMessage('warn', args);
+      console.warn(msg);
+      storeLog(rawMessage('warn', args));
+    } else {
+      console.log(...args);
+    }
   },
   error: (...args: any[]) => {
-    const msg = formatMessage('error', args);
-    console.error(msg);
-    storeLog(rawMessage('error', args));
+    if (isNode) {
+      const msg = formatMessage('error', args);
+      console.error(msg);
+      storeLog(rawMessage('error', args));
+    } else {
+      console.log(...args);
+    }
   },
   getBuffer: (): LogBuffer[] => [...logBuffer], // 복사본 반환
   clearBuffer: () => {

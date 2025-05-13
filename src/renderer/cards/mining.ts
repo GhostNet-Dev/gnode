@@ -26,7 +26,7 @@ export default class Mining extends Card implements IPage {
 
         if (this.blockData.length === 7) {
             // 날짜 오름차순 정렬
-            this.blockData.sort((a, b) => a.date.localeCompare(b.date));
+            this.blockData.sort((a, b) => b.date.localeCompare(a.date));
             this.updateChart(this.blockData);
         }
     }
@@ -38,7 +38,7 @@ export default class Mining extends Card implements IPage {
         }
         return ret
     }
-    drawChart() {
+    async drawChart() {
         this.blockData = [];
         const today = new Date();
 
@@ -54,7 +54,8 @@ export default class Mining extends Card implements IPage {
                 token: this.sess.getToken()
             };
 
-            this.GetBlock(d.year, d.month, d.day);
+            const blk = await this.GetBlock(d.year, d.month, d.day);
+            this.MakeChart(blk);
         }
     }
 

@@ -25,8 +25,10 @@ export class LevelWrapper<T> implements IGenericDB<T> {
     }
 
 
-    async *iterator() {
-        for await (const item of this.db.iterator()) yield item;
+    async *iterator(): AsyncIterable<[string, T]> {
+        for await (const [key, value] of this.db.iterator() ) {
+            yield [key, value];
+        }
     }
 
     getStatus(): string {

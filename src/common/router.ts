@@ -10,7 +10,6 @@ import { IDBManager } from "@GBlibs/db/dbtypes";
 
 export default class AppRoutes {
     secret = ""
-    net?: INetworkInterface
     constructor(
         private keyMaker: KeyMaker,
         private session: SessionServer,
@@ -31,22 +30,22 @@ export default class AppRoutes {
         if (ret) {
             this.secret = crypto.randomBytes(64).toString("hex")
             const token = this.session.generateToken(id, this.secret)
-            return { ret, token, addr: this.keyMaker.GetBase58PubKey() }
+            return { ret, token, addr: await this.keyMaker.GetBase58PubKey() }
         }
         return { ret, token: null, addr: null }
     }
     async SessionCheck(token: string) {
-        if (!this.net) return
+        if(this.keyMaker.id == null) return null
 
         const ret = this.session.verifyToken(token, this.secret)
-        return { ret, addr: this.keyMaker.GetBase58PubKey() }
+        return { ret, addr: await this.keyMaker.GetBase58PubKey() }
     }
     async GetAccountInfo(token: string) {
         const ret = this.session.verifyToken(token, this.secret)
         logger.info(ret, this.keyMaker.id)
         if (ret != null && this.keyMaker.id == ret) {
             const data: AccountData = {
-                addr: this.keyMaker.GetBase58PubKey(),
+                addr: await this.keyMaker.GetBase58PubKey(),
                 coins: 0, // TODO
             }
             return data
@@ -82,6 +81,7 @@ export default class AppRoutes {
         key: string
     ): Promise<T | undefined> {
         const db = this.dbMgr.getDB<T>(dbname);
+        logger.info(dbname, key, await db.get(key))
         return await db.get(key);
     }
     async putDBValue<T>(
@@ -90,6 +90,7 @@ export default class AppRoutes {
         value: T
     ): Promise<void> {
         const db = this.dbMgr.getDB<T>(dbname);
+        logger.info(dbname, key, value)
         await db.put(key, value);
     }
     async delDBValue<T>(

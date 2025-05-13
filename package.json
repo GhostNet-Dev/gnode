@@ -10,21 +10,20 @@
     "start:web": "node dist/server/index.js"
   },
   "dependencies": {
+    "bs58": "^6.0.0",
     "bs58check": "^4.0.0",
-    "buffer": "^6.0.3",
     "chalk": "^5.4.1",
     "chart.js": "^4.4.8",
     "classic-level": "^2.0.0",
-    "crypto-browserify": "^3.12.1",
     "electron": "^35.0.0",
     "elliptic": "^6.6.1",
+    "hash.js": "^1.1.7",
     "js-sha256": "^0.11.0",
     "jsonwebtoken": "^9.0.2",
     "level": "^9.0.0",
     "mime": "^4.0.6",
     "node-gyp-build": "^4.8.4",
     "peerjs": "^1.5.4",
-    "stream-browserify": "^3.0.0",
     "uuid": "^11.1.0",
     "ws": "^8.18.1"
   },

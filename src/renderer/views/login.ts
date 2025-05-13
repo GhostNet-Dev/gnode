@@ -52,7 +52,7 @@ export default class LoginPage extends Page implements IPage {
       window.ClickLoadPage('login', false)
     })
   }
-  SuccessLogin(pubKey:string) {
+  SuccessLogin(pubKey: string) {
     const menu = document.getElementById('navbarLoginMenu') as HTMLUListElement;
     menu.style.display = "none"
     const menuOut = document.getElementById('navbarLogoutMenu') as HTMLUListElement;

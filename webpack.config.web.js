@@ -1,4 +1,5 @@
 const path = require('path');
+
 const g_resolve = {
     extensions: ['.ts', '.js'],
     alias: {
@@ -50,12 +51,6 @@ module.exports = [{
     module: g_module,
     resolve: {
         ...g_resolve,
-        fallback: {
-            crypto: require.resolve("crypto-browserify"),
-            stream: require.resolve("stream-browserify"),
-            buffer: require.resolve("buffer"),
-            vm: false,
-        },
     },
 }];
 
