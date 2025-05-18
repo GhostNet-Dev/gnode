@@ -42,7 +42,9 @@ export default class AppRoutes {
     }
     async GetAccountInfo(token: string) {
         const ret = this.session.verifyToken(token, this.secret)
-        logger.info(ret, this.keyMaker.id)
+        logger.info(ret)
+        logger.info(this.keyMaker.id)
+        logger.info(token, this.secret)
         if (ret != null && this.keyMaker.id == ret) {
             const data: AccountData = {
                 addr: await this.keyMaker.GetBase58PubKey(),

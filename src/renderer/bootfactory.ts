@@ -1,5 +1,4 @@
 import { FuncMap } from "@Webs/models/type";
-import DashboardPage from "./views/dashboard";
 import LoginPage from "./views/login";
 import LogoutPage from "./views/logout";
 import MakeAccountPage from "./views/makeaccount";
@@ -20,7 +19,7 @@ export default class BootRenderFactory {
     channel: IChannel = new Channel(3001)
     session = new Sessions()
     makeAcc = new MakeAccountPage(this.channel)
-    net = new RendererNet()
+    net = new RendererNet(this.channel)
     login = new LoginPage(this.channel, this.session, this.net)
     logout = new LogoutPage(this.session)
     funcMap: FuncMap = {

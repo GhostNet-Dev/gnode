@@ -60,10 +60,16 @@ export default class LoginPage extends Page implements IPage {
     const acc = document.getElementById('accountTxt') as HTMLLIElement;
     acc.innerText = this.id
 
-    this.net.StartPeer(this.ch, new GossipP2P(new DHTPeer(pubKey)))
+    this.net.StartPeer(pubKey)
 
     window.ClickLoadPage('dashboard', false)
   }
+
+/**
+ * Runs the login page logic. If a session token exists, it sends a session check request.
+ * Otherwise, it loads the HTML, binds events, and retrieves the account list.
+ * @returns A promise that resolves to true when completed.
+ */
 
   async Run(): Promise<boolean> {
     const token = this.sess.getToken()

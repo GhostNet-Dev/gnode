@@ -2,11 +2,12 @@ import Peer, { DataConnection } from "peerjs";
 import { v4 as uuidv4 } from "uuid"
 import { peerConfig } from "./peer";
 import { GPType, GPacket } from "./packet";
+import { IDataNet } from "./inetwork";
 
 /**
  * PeerJS 기반 DHT 네트워크
  */
-export default class DHTPeer {
+export default class DHTPeer implements IDataNet {
     peer: Peer;
     peers: Map<string, DataConnection>; // 연결된 Peer 목록
     private keyValueStore: Map<string, string>; // DHT 저장소

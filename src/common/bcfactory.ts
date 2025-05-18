@@ -7,10 +7,11 @@ import Blockchain from "./blockchain";
 import KeyManager from "@GBlibs/key/keys";
 import KeyMaker from "./keymaker";
 import BlockStats from "@GBlibs/blocks/blockstate";
-import { INetworkInterface } from "@GBlibs/network/inetwork";
+import { IDataNet, INetworkInterface } from "@GBlibs/network/inetwork";
 import { IChannel } from "./icom";
 import { DBAdapterManager } from "./dbmadapter";
 import { WebCryptoProvider } from "@GBlibs/key/webcrypto";
+import SaveData from "@GBlibs/utils/savedata";
 
 export default class BlockChainFactory {
     dbMgr: DBAdapterManager
@@ -25,9 +26,11 @@ export default class BlockChainFactory {
 
     pbftCons: PBFTConsensus
     blockChain: Blockchain
+    saveData: SaveData
 
     constructor(
         private net: INetworkInterface,
+        private dataNet: IDataNet,
         private ch: IChannel,
     ) {
         const crypto = new WebCryptoProvider();
@@ -45,5 +48,8 @@ export default class BlockChainFactory {
 
         this.blockChain = new Blockchain(this.blocks, this.txs, this.pbftCons, this.net,
             this.pendingPool, this.keys)
+
+        this.saveData = new SaveData(this.txs, this.keyMaker, this.dataNet)
+            
     }
 }

@@ -6,3 +6,7 @@ export interface INetworkInterface {
   once(event: string, listener: (...args: any[]) => void): void;
 }
 
+export interface IDataNet {
+  storeData(key: string, value: string): void
+  lookupData(key: string): string | undefined
+}

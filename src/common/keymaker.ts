@@ -5,13 +5,15 @@ export default class KeyMaker {
     id?: string
     pass?: string
     pubkey?: string
+    base58pubkey?: string
     privKey?: string
     constructor(public kmgr: KeyManager) {
     }
     async GetBase58PubKey() {
         if(!this.pubkey) throw new Error("there is no pubkey");
-        
-        return await this.kmgr.pemToBitcoinAddress(this.pubkey) 
+
+        if(!this.base58pubkey) this.base58pubkey = await this.kmgr.pemToBitcoinAddress(this.pubkey)
+        return this.base58pubkey
     }
     
     async Login(id: string, pass: string) {

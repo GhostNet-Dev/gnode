@@ -14,25 +14,30 @@ export default class BcInfo extends Card implements IPage {
         const blocks = await Promise.all(
             Array.from({ length: count }, (_, i) => this.blocks.getBlock(start + i))
         )
-        let html = ``
+        let html = `
+    <div class="row border-top p-4">
+        <div class="col text-center"> ID</div>
+        <div class="col text-center"> Hash</div>
+        <div class="col text-center"> Txs</div>
+    </div>`
         blocks.forEach((b) => {
             if (!b) return
             html += `
     <div class="row border-top">
-        <div class="col">${b.index}</div>
-        <div class="col">${b.hash}</div>
-        <div class="col">${b.transactions.length}</div>
+        <div class="col text-center">${b.index}</div>
+        <div class="col text-center">${b.hash}</div>
+        <div class="col text-center">${b.transactions.length}</div>
     </div>
                 `
         })
         const domTable = document.getElementById("blocklist")
-        domTable?.insertAdjacentHTML("beforeend", html)
+        if (domTable) domTable.innerHTML = html
     }
     async DrawBlockInfo() {
         const latest = await this.blocks.getLatestBlock()
         if (!latest) throw new Error("there is no block")
         const info: BlockInfo = {
-            height: latest.index,
+            height: latest.index + 1,
             txsCount: latest.transactions.length,
             latestBlockHash: latest.hash,
         }
@@ -49,7 +54,7 @@ export default class BcInfo extends Card implements IPage {
         if (domTxsCount) domTxsCount.innerText = info.txsCount.toString()
 
         const getCnt = info.height - 10
-        this.DrawBlockList(info.height, (getCnt > 0) ? getCnt : 0)
+        this.DrawBlockList(info.height, (getCnt < 0) ? Math.abs(getCnt) : 10)
     }
     async Run(): Promise<boolean> {
         this.DrawBlockInfo()
